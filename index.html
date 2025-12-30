@@ -425,11 +425,6 @@ function initSupabase() {
 }
 
 function initTetris() {
-  // Tournament globals готовы!
-  const logoBg = new Image();
-  let logoBgReady = false;
-  logoBg.src = 'img/logo.png';
-  logoBg.onload = () => { logoBgReady = true; };
   
     // фон с логотипом
     const logoBg = new Image();
@@ -768,18 +763,15 @@ async function createRoom() {
   
   try {
     const { error } = await window.supabaseClient.from('tournaments').insert({
-      code: code, name: name, duration: duration
+      code: code,
+      name: name,
+      duration: duration
     });
     
     if (error) {
       alert('❌ Error: ' + error.message);
       return;
     }
-    // ... остальное без изменений ...
-  } catch (err) {
-    alert('❌ Connection error: ' + err.message);
-  }
-}
     
     window.tournament.currentRoom = { code, name, duration };
     window.tournament.playerName = 'Host';
