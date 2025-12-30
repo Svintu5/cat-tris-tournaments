@@ -401,23 +401,36 @@
 
   <script>
     const canvas = document.getElementById('game');
-    const context = canvas.getContext('2d');
+const context = canvas.getContext('2d');
 
-    const { createClient } = supabase;
-    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+// Ждём Supabase CDN
+function initSupabase() {
+  if (typeof supabase === 'undefined') {
+    setTimeout(initSupabase, 100);
+    return;
+  }
+  
+  const { createClient } = supabase;
+  const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+  
+  window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  window.tournament = {
+    channel: null, currentRoom: null, timeLeft: 0, 
+    playerName: 'Anonymous', leaderboard: {}
+  };
+  
+  // Запускаем тетрис ПОСЛЕ Supabase
+  initTetris();
+}
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Tournament globals
-    window.tournament = {
-      channel: null,
-      currentRoom: null,
-      timeLeft: 0,
-      playerName: 'Anonymous',
-      leaderboard: {}
-    };
-
+function initTetris() {
+  // Tournament globals готовы!
+  const logoBg = new Image();
+  let logoBgReady = false;
+  logoBg.src = 'img/logo.png';
+  logoBg.onload = () => { logoBgReady = true; };
+  
     // фон с логотипом
     const logoBg = new Image();
     let logoBgReady = false;
@@ -754,16 +767,19 @@ async function createRoom() {
   const code = Math.random().toString(36).slice(2,6).toUpperCase();
   
   try {
-    const { error } = await supabase.from('tournaments').insert({
-      code: code,
-      name: name,
-      duration: duration
+    const { error } = await window.supabaseClient.from('tournaments').insert({
+      code: code, name: name, duration: duration
     });
     
     if (error) {
       alert('❌ Error: ' + error.message);
       return;
     }
+    // ... остальное без изменений ...
+  } catch (err) {
+    alert('❌ Connection error: ' + err.message);
+  }
+}
     
     window.tournament.currentRoom = { code, name, duration };
     window.tournament.playerName = 'Host';
@@ -781,6 +797,9 @@ async function createRoom() {
     playerReset();
     updateScore();
     update();
+
+    // Запуск всего!
+    initSupabase();
   </script>
 </body>
 </html>
