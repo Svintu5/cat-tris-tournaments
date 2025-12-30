@@ -871,7 +871,7 @@ function startTournament() {
   if (window.tetris && window.tetris.playerReset) {
   window.tetris.playerReset();
 }
-
+}
 function updateLeaderboard() {
   const playersDiv = document.getElementById('players');
   const sorted = Object.entries(window.tournament.leaderboard)
