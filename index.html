@@ -431,12 +431,6 @@ function initTetris() {
     let logoBgReady = false;
     logoBg.src = 'img/logo.png';
     logoBg.onload = () => { logoBgReady = true; };
-
-    // ✅ ГЛОБАЛЬНЫЙ ДОСТУП К ТЕТРИСУ
-  window.gameStarted = gameStarted;
-  window.playerReset = playerReset;
-  window.updateScore = updateScore;
-  window.player = player;
   
     const CELL_SIZE = 24;
     const CELL_HEIGHT = 24;
@@ -475,11 +469,19 @@ function initTetris() {
     const SPEED_STEP = 0.95;
     const MIN_DROP_INTERVAL = 120;
 
-    let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
+let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
 
-    let gameStarted = false;
-    let gameOver = false;
-    const startOverlay = document.getElementById('startOverlay');
+let gameStarted = false;
+let gameOver = false;
+
+// 🔥 ГЛОБАЛЬНЫЙ ДОСТУП — ПОСЛЕ объявления переменных!
+window.tetris = {
+  gameStarted: false,
+  playerReset: null,
+  updateScore: null,
+  player: null
+};
+const startOverlay = document.getElementById('startOverlay');
 
     function createMatrix(w, h) {
       const matrix = [];
@@ -617,6 +619,10 @@ function initTetris() {
         startOverlay.textContent = 'Game Over Press Enter';
         startOverlay.style.display = 'block';
       }
+            // Синхронизация с глобальным объектом
+      window.tetris.gameStarted = gameStarted;
+      window.tetris.playerReset = playerReset;
+      window.tetris.player = player;
     }
 
     function playerRotate(dir) {
@@ -667,6 +673,9 @@ if (dropCounter > currentInterval) playerDrop();
         localStorage.setItem('cattris_top_score', topScore);
       }
       document.getElementById('topScore').textContent = topScore;
+
+      // Синхронизация
+      window.tetris.updateScore = updateScore;
     }
 
     function handleAction(action) {
@@ -690,6 +699,9 @@ if (dropCounter > currentInterval) playerDrop();
       if (action === 'right') playerMove(1);
       if (action === 'down') playerDrop();
       if (action === 'up') playerRotate(1);
+
+      // Синхронизация состояния игры
+      window.tetris.gameStarted = gameStarted;
     }
 
     document.addEventListener('keydown', event => {
@@ -734,6 +746,9 @@ document.querySelectorAll('[data-action]').forEach(btn => {
   btn.addEventListener('touchend', release);
 });
 
+  // 🔥 Финальная синхронизация
+window.tetris.gameStarted = gameStarted;
+  
 playerReset();
 updateScore();
 update();
@@ -852,8 +867,9 @@ function startTournament() {
   }, 1000);
   
   document.getElementById('tournaments').style.display = 'none';
-  window.gameStarted = true;
-  window.playerReset();
+  window.tetris.gameStarted = true;
+  if (window.tetris && window.tetris.playerReset) {
+  window.tetris.playerReset();
 }
 
 function updateLeaderboard() {
