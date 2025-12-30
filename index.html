@@ -403,6 +403,29 @@
     const canvas = document.getElementById('game');
     const context = canvas.getContext('2d');
 
+    // --- переменные турнира ---
+    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let channel = null;
+    let currentRoom = null;
+    let timeLeft = 0;
+    let playerName = 'Anonymous';
+    let leaderboard = {};
+
+    let player = { pos: { x: 0, y: 0 }, matrix: null, score: 0 };
+    let gameStarted = false;
+
+    // даём турниру доступ к состоянию игры
+    window.player = player;
+    window.gameStarted = gameStarted;
+    function setGameStarted(value) {
+      gameStarted = value;
+      window.gameStarted = value;
+    }
+
     // фон с логотипом
     const logoBg = new Image();
     let logoBgReady = false;
@@ -583,7 +606,7 @@
         player.score = 0;
         dropInterval = 800;
 
-        gameStarted = false;
+        setGameStarted(false);
         gameOver = true;
         startOverlay.textContent = 'Game Over Press Enter';
         startOverlay.style.display = 'block';
@@ -643,7 +666,7 @@ if (dropCounter > currentInterval) playerDrop();
     function handleAction(action) {
       if (action === 'start') {
         gameOver = false;
-        gameStarted = true;
+        setGameStarted(true);
         startOverlay.style.display = 'none';
         startOverlay.textContent = 'Press Enter to start';
         arena.forEach(row => row.fill(0));
@@ -705,6 +728,33 @@ document.querySelectorAll('[data-action]').forEach(btn => {
   btn.addEventListener('touchend', release);
 });
 
+// --- UI турнира ---
+
+function toggleTournaments() {
+  const panel = document.getElementById('tournaments');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function showTab(tab) {
+  const tabs = document.querySelectorAll('.tab');
+  tabs.forEach(btn => btn.classList.remove('active'));
+  // event.target работает только из onclick в HTML
+  // поэтому ориентируемся на id
+  document.querySelector(
+    tab === 'create' ? '.tab:nth-child(1)' : '.tab:nth-child(2)'
+  ).classList.add('active');
+
+  document.getElementById('createTab').style.display = tab === 'create' ? 'block' : 'none';
+  document.getElementById('joinTab').style.display = tab === 'join' ? 'block' : 'none';
+}
+
+// горячая клавиша T
+document.addEventListener('keydown', e => {
+  if (e.key.toLowerCase() === 't') {
+    toggleTournaments();
+  }
+});
+    
     playerReset();
     updateScore();
     update();
