@@ -301,6 +301,25 @@
     .promo-text {
       font-weight: 600;
     }
+  /* ТУРНИРЫ */
+.tournaments-panel {
+  position: fixed; top: 20px; right: 20px; z-index: 999;
+  background: rgba(0,0,0,0.95); border: 2px solid #9B6AF6;
+  border-radius: 16px; padding: 20px; max-width: 300px;
+  backdrop-filter: blur(12px); font-size: 14px;
+  box-shadow: 0 20px 40px rgba(155,106,246,0.4);
+}
+.tournaments-panel input, .tournaments-panel button {
+  width: 100%; margin: 6px 0; padding: 12px; border-radius: 12px;
+  border: none; background: #9B6AF6; color: white; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.tournaments-panel button:hover { background: #E37DF7; }
+.tournaments-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab { flex: 1; padding: 8px; font-size: 13px; }
+.tab.active { background: #E37DF7; }
+#players { max-height: 160px; overflow: auto; background: rgba(0,0,0,0.6); 
+  padding: 12px; border-radius: 12px; margin: 12px 0; font-size: 13px; }
   </style>
 </head>
 <body>
