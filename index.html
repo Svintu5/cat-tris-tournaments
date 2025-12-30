@@ -790,6 +790,75 @@ async function createRoom() {
     alert('❌ Connection error: ' + err.message);
   }
 }
+async function joinRoom() {
+  const code = document.getElementById('roomCode').value.toUpperCase();
+  window.tournament.playerName = document.getElementById('playerName').value || 'Anonymous';
+  
+  if (!code) {
+    alert('❌ Enter room code!');
+    return;
+  }
+  
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('tournaments')
+      .select('*')
+      .eq('code', code)
+      .single();
+    
+    if (error || !data) {
+      alert('❌ Room not found!');
+      return;
+    }
+    
+    window.tournament.currentRoom = data;
+    document.getElementById('roomInfo').textContent = `Room: ${code}`;
+    document.getElementById('lobby').style.display = 'block';
+    updateLeaderboard();
+  } catch (err) {
+    alert('❌ Connection error!');
+  }
+}
+  
+  // START турнира + лидерборд
+function startTournament() {
+  if (!window.tournament.currentRoom) {
+    alert('❌ Create or join room first!');
+    return;
+  }
+  
+  window.tournament.timeLeft = window.tournament.currentRoom.duration || 180;
+  
+  const timer = setInterval(() => {
+    window.tournament.timeLeft--;
+    document.getElementById('countdown').textContent = 
+      `${Math.floor(window.tournament.timeLeft/60)}:${(window.tournament.timeLeft%60).toString().padStart(2,'0')}`;
+    
+    if (window.tournament.timeLeft <= 0) {
+      clearInterval(timer);
+      const winner = Object.entries(window.tournament.leaderboard)
+        .sort(([,a], [,b]) => b - a)[0];
+      alert('🏆 FINISHED!\n' + (winner ? `${winner[0]}: ${winner[1]}` : 'No players'));
+      document.getElementById('tournaments').style.display = 'block';
+      window.tournament.leaderboard = {};
+      updateLeaderboard();
+    }
+  }, 1000);
+  
+  document.getElementById('tournaments').style.display = 'none';
+  window.gameStarted = true;
+  window.playerReset();
+}
+
+function updateLeaderboard() {
+  const playersDiv = document.getElementById('players');
+  const sorted = Object.entries(window.tournament.leaderboard)
+    .sort(([,a], [,b]) => b - a);
+  playersDiv.innerHTML = sorted.map(([name, score]) => 
+    `${name}: ${score}`
+  ).join('<br>') || 'Waiting for players...';
+}
+
 initSupabase();
   </script>
 </body>
