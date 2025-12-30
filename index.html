@@ -676,6 +676,9 @@ if (dropCounter > currentInterval) playerDrop();
 
       // Синхронизация
       window.tetris.updateScore = updateScore;
+      if (window.tournament && window.tournament.currentRoom) {
+        window.tournament.leaderboard[window.tournament.playerName] = player.score;
+      }
     }
 
     function handleAction(action) {
@@ -854,6 +857,12 @@ function startTournament() {
     window.tournament.timeLeft--;
     document.getElementById('countdown').textContent = 
       `${Math.floor(window.tournament.timeLeft/60)}:${(window.tournament.timeLeft%60).toString().padStart(2,'0')}`;
+
+        if (window.tetris && window.tetris.gameStarted) {
+      window.tournament.leaderboard[window.tournament.playerName] = 
+        window.tetris.player ? window.tetris.player.score : 0;
+      updateLeaderboard();
+    }
     
     if (window.tournament.timeLeft <= 0) {
       clearInterval(timer);
