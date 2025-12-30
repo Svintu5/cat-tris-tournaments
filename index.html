@@ -1,77 +1,757 @@
 <!DOCTYPE html>
 <html>
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<title>Cat-tris</title>
-<style>body{margin:0;padding:20px;font-family:monospace;background:#000;color:#fff}
-#game{width:240px;height:360px;border:2px solid #9B6AF6;display:block}
-#tournaments{position:fixed;top:20px;right:20px;background:rgba(0,0,0,0.9);padding:15px;border:2px solid #9B6AF6;border-radius:10px;display:none}
-#tournaments button{width:100%;margin:3px 0;padding:8px;background:#9B6AF6;color:white;border:none;border-radius:5px;cursor:pointer}
-#tournaments input{width:100%;margin:3px 0;padding:8px;border-radius:5px;border:1px solid #9B6AF6;background:#111;color:white}
-</style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>😻 Cat-tris GenLayer TOURNAMENTS</title>
+  <meta charset="UTF-8">
+  <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html, body {
+      height: 100vh;
+      background: 
+        radial-gradient(circle at 20% 0%, #E37DF7 0%, transparent 40%),
+        radial-gradient(circle at 80% 100%, #110FFF 0%, transparent 45%),
+        radial-gradient(circle at 50% 40%, #9B6AF6 0%, transparent 55%),
+        #000;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-attachment: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Switzer', system-ui, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .machine {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .device {
+      position: relative;
+      width: 380px;
+      padding: 24px 24px 32px;
+      border-radius: 32px;
+      background: linear-gradient(145deg, #9B6AF6, #7C4DFF);
+      box-shadow: 
+        0 0 0 4px #E37DF7 inset,
+        0 24px 48px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .xmas-hat {
+      position: absolute;
+      top: -85px;
+      left: -55px;
+      width: 260px;
+      pointer-events: none;
+    }
+
+    .screen {
+      width: 100%;
+      height: 420px;
+      border-radius: 24px;
+      background: #000;
+      box-shadow: 
+        0 0 0 4px #282B5D,
+        0 0 40px #110FFF;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .screen-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 16px;
+      background: #000;
+      image-rendering: pixelated;
+    }
+
+    .info {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.8);
+      border-radius: 20px;
+      font-size: 20px;
+      font-weight: 700;
+      text-shadow: 0 0 12px #110FFF;
+      z-index: 10;
+    }
+
+    .top-score {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.8);
+      border-radius: 20px;
+      font-size: 20px;
+      font-weight: 700;
+      text-shadow: 0 0 12px #110FFF;
+      z-index: 10;
+    }
+
+    #startOverlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 24px 48px;
+      background: rgba(0,0,0,0.9);
+      border: 2px solid #9B6AF6;
+      border-radius: 24px;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-align: center;
+      box-shadow: 0 0 32px #9B6AF6;
+      z-index: 20;
+    }
+
+    .controls {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dpad-container, .btn-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      color: #000;
+      box-shadow: 
+        0 4px 0 rgba(0,0,0,0.3),
+        0 0 16px rgba(0,0,0,0.4);
+      transition: all 0.08s ease;
+      user-select: none;
+    }
+
+    .btn-circle.blue {
+      background: linear-gradient(145deg, #4FD1FF, #00A8FF);
+      color: #001F3F;
+    }
+
+    .btn-circle.btn-start {
+      width: 120px;
+      height: 120px;
+      font-size: 20px;
+      border-radius: 24px;
+    }
+
+    .btn-circle.pressed {
+      transform: translateY(4px);
+      box-shadow: 
+        0 2px 0 rgba(0,0,0,0.4),
+        0 0 12px rgba(0,0,0,0.6);
+    }
+
+    .dpad-button {
+      position: absolute;
+    }
+
+    .dpad-button[data-action="up"] { top: 0; left: 50%; transform: translateX(-50%); }
+    .dpad-button[data-action="down"] { bottom: 0; left: 50%; transform: translateX(-50%); }
+    .dpad-button[data-action="left"] { left: 0; top: 50%; transform: translateY(-50%); }
+    .dpad-button[data-action="right"] { right: 0; top: 50%; transform: translateY(-50%); }
+
+    .dpad {
+      position: relative;
+      width: 180px;
+      height: 180px;
+    }
+
+    .title-main {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: linear-gradient(45deg, #E37DF7, #9B6AF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 24px rgba(227,125,247,0.6);
+      z-index: 100;
+    }
+
+    .hint-bar {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      color: #fff;
+      text-shadow: 0 0 12px #110FFF;
+      z-index: 100;
+    }
+
+    /* ТУРНИРЫ */
+    .tournaments-panel {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      width: 320px;
+      background: rgba(0,0,0,0.95);
+      backdrop-filter: blur(20px);
+      border: 2px solid #9B6AF6;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 16px 48px rgba(155,106,246,0.4);
+      font-size: 14px;
+      z-index: 999;
+      display: none;
+    }
+
+    .tournaments-panel button,
+    .tournaments-panel input {
+      width: 100%;
+      margin: 6px 0;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .tournaments-panel button {
+      background: linear-gradient(145deg, #9B6AF6, #7C4DFF);
+      color: white;
+    }
+
+    .tournaments-panel button:hover {
+      background: linear-gradient(145deg, #E37DF7, #9B6AF6);
+      transform: translateY(-1px);
+    }
+
+    .tournaments-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab {
+      flex: 1;
+      background: rgba(155,106,246,0.3);
+      font-size: 13px;
+    }
+
+    .tab.active {
+      background: linear-gradient(145deg, #E37DF7, #9B6AF6);
+    }
+
+    #players {
+      max-height: 140px;
+      overflow-y: auto;
+      background: rgba(0,0,0,0.5);
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      margin: 12px 0;
+    }
+
+    #roomInfo {
+      font-weight: 700;
+      color: #E37DF7;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .promo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 16px;
+      letter-spacing: 0.1em;
+      color: #E6E6FF;
+      opacity: 0.9;
+      font-weight: 600;
+    }
+
+    .promo-logo {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 12px #110FFF);
+    }
+  </style>
 </head>
 <body>
-<canvas id="game"></canvas>
+  <div class="title-main">😻 CAT-TRIS TOURNAMENTS 😻</div>
+  <div class="hint-bar">←→ Move | ↑ Rotate | ↓ Drop | T = Tournaments</div>
 
-<div id="tournaments">
-<button onclick="toggle()">🏆 TOURNAMENTS</button>
-<div>
-<button onclick="show('create')">CREATE</button>
-<button onclick="show('join')">JOIN</button>
+  <div class="machine">
+    <div class="device">
+      <img src="https://via.placeholder.com/260x120/9B6AF6/FFFFFF?text=🎩" class="xmas-hat" alt="Hat">
+      
+      <div class="screen">
+        <div class="info">
+          Score: <span id="score">0</span>
+        </div>
+        <div class="top-score">
+          Top: <span id="topScore">0</span>
+        </div>
+        
+        <div class="screen-inner">
+          <div id="startOverlay">Press ENTER to START</div>
+          <canvas id="game" width="240" height="360"></canvas>
+        </div>
+      </div>
 
-<div id="create">
-<input id="name" value="Cat Battle">
-<input id="time" type="number" value="30">
-<button onclick="create()">CREATE</button>
-</div>
+      <div class="controls">
+        <div class="dpad">
+          <div class="dpad-container">
+            <button class="btn-circle dpad-button" data-action="up">▲</button>
+            <button class="btn-circle dpad-button" data-action="down">▼</button>
+            <button class="btn-circle dpad-button" data-action="left">◀</button>
+            <button class="btn-circle dpad-button" data-action="right">▶</button>
+          </div>
+        </div>
+        <div class="btn-stack">
+          <button class="btn-circle blue btn-start" data-action="start">START</button>
+        </div>
+      </div>
+    </div>
 
-<div id="join" style="display:none">
-<input id="code" placeholder="CODE">
-<input id="player" placeholder="Name">
-<button onclick="join()">JOIN</button>
-</div>
+    <div class="promo">
+      <span>Made for</span>
+      <img src="https://via.placeholder.com/100x100/110FFF/FFFFFF?text=GENLAYER" class="promo-logo" alt="GenLayer">
+    </div>
+  </div>
 
-<div id="lobby" style="display:none">
-<div id="room"></div>
-<div id="players"></div>
-<button onclick="start()">START</button>
-</div>
-</div>
-</div>
+  <!-- ТУРНИРНАЯ ПАНЕЛЬ -->
+  <div id="tournaments" class="tournaments-panel">
+    <button onclick="toggleTournaments()">🏆 TOURNAMENTS</button>
+    
+    <div class="tournaments-tabs">
+      <button class="tab active" onclick="showTab('create')">CREATE</button>
+      <button class="tab" onclick="showTab('join')">JOIN</button>
+    </div>
 
-<script>
-const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
-canvas.width=240;canvas.height=360;
+    <div id="createTab">
+      <input id="roomName" placeholder="Room name" value="Cat Battle 🐱">
+      <input id="duration" type="number" value="300" min="60" max="900" placeholder="Duration (seconds)">
+      <button onclick="createRoom()">🚀 CREATE ROOM</button>
+    </div>
 
-const SUPABASE_URL='https://lsdwavmfkbfrnbmeqiov.supabase.co';
-const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
-const supabase=Supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+    <div id="joinTab" style="display: none;">
+      <input id="roomCode" placeholder="Enter room CODE (ABC123)" maxlength="6">
+      <input id="playerName" placeholder="Your name" value="Player">
+      <button onclick="joinRoom()">⚡ JOIN ROOM</button>
+    </div>
 
-let arena=createMatrix(10,15),player={pos:{x:0,y:0},matrix:null,score:0},dropCounter=0,dropInterval=800,lastTime=0,gameStarted=false;
-let channel=null,currentRoom=null,timeLeft=0,leaderboard={};
+    <div id="lobby" style="display: none;">
+      <div id="roomInfo"></div>
+      <div id="players">Waiting for players...</div>
+      <button id="startBtn" onclick="startTournament()">🎮 START TOURNAMENT</button>
+      <div id="countdown"></div>
+    </div>
+  </div>
 
-function createMatrix(w,h){const m=[];while(h--)m.push(new Array(w).fill(0));return m}
-function createPiece(type){if(type==='T')return[[0,0,0],[1,1,1],[0,1,0]];return[[1,1],[1,1]]}
-function collide(a,p){const[m,o]=[p.matrix,p.pos];for(let y=0;y<m.length;++y)for(let x=0;x<m[y].length;++x)if(m[y][x]!==0&&(a[y+o.y]&&a[y+o.y][x+o.x])!==0)return true;return false}
-function merge(a,p){p.matrix.forEach((r,y)=>r.forEach((v,x)=>{if(v!==0)a[y+p.pos.y][x+p.pos.x]=v}))}
-function playerReset(){player.matrix=createPiece('TILOSZ'[Math.random()*6|0]);player.pos.y=0;player.pos.x=3;if(collide(arena,player)){arena.forEach(r=>r.fill(0));player.score=0;gameStarted=false}}
-function playerDrop(){player.pos.y++;if(collide(arena,player)){player.pos.y--;merge(arena,player);playerReset()}dropCounter=0}
-function playerMove(d){player.pos.x+=d;if(collide(arena,player))player.pos.x-=d}
-function updateScore(){document.getElementById('score').outerHTML=`Score: ${player.score}`;if(channel&&gameStarted)channel.send({type:'broadcast',event:'score',payload:{name:playerName,score:player.score}})}
+  <script>
+    // ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const CELL_SIZE = 24;
 
-function draw(){ctx.fillStyle='#000';ctx.fillRect(0,0,240,360);drawMatrix(arena,{x:0,y:0});if(gameStarted&&player.matrix)drawMatrix(player.matrix,player.pos)}
-function drawMatrix(m,o){m.forEach((r,y)=>r.forEach((v,x)=>{if(v){ctx.fillStyle=`hsl(${v*40},100%,50%)`;ctx.fillRect((x+o.x)*24,(y+o.y)*24,23,23)}}))}
-function update(t=0){const d=t-lastTime;lastTime=t;dropCounter+=d;if(dropCounter>dropInterval&&gameStarted)playerDrop();draw();requestAnimationFrame(update)}
+    // Supabase
+    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function toggle(){document.getElementById('tournaments').style.display=document.getElementById('tournaments').style.display==='none'?'block':'none'}
-function show(tab){document.getElementById('create').style.display=tab==='create'?'block':'none';document.getElementById('join').style.display=tab==='join'?'block':'none'}
-async function create(){const name=document.getElementById('name').value,dur=parseInt(document.getElementById('time').value),code=Math.random().toString(36).slice(2,6).toUpperCase();await supabase.from('tournaments').insert({code,name,duration:dur});currentRoom={code,name,dur};join(code)}
-async function join(code=''){if(!code)code=document.getElementById('code').value.toUpperCase(),playerName=document.getElementById('player').value||'Anon';channel=supabase.channel('room:'+code);await channel.subscribe();channel.on('broadcast',{event:'score'},p=>{leaderboard[p.payload.name]=p.payload.score;document.getElementById('players').innerHTML=Object.entries(leaderboard).sort(([,a],[,b])=>b-a).map(([n,s])=>`${n}: ${s}`).join('<br>')});document.getElementById('room').textContent=`Room: ${code}`;document.getElementById('lobby').style.display='block'}
-function start(){timeLeft=currentRoom.duration;const t=setInterval(()=>{timeLeft--;if(timeLeft<=0){clearInterval(t);alert('FINISHED!');document.getElementById('tournaments').style.display='block'}},1000);document.getElementById('tournaments').style.display='none';gameStarted=true;playerReset()}
+    // ИГРА
+    let arena = [];
+    let player = { pos: {x: 0, y: 0}, matrix: null, score: 0 };
+    let dropCounter = 0, dropInterval = 800, lastTime = 0;
+    let gameStarted = false, gameOver = false;
+    let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
+    
+    // ТУРНИРЫ
+    let channel = null, currentRoom = null, timeLeft = 0, playerName = '';
+    let leaderboard = {};
 
-document.addEventListener('keydown',e=>{if(e.key==='t')toggle();if(e.key==='Enter')gameStarted=true,playerReset();if(!gameStarted)return;if(e.keyCode===37)playerMove(-1);if(e.keyCode===39)playerMove(1);if(e.keyCode===40)playerDrop();if(e.keyCode===38)playerRotate()});
-playerReset();updateScore();update();
-</script>
-<div style="position:fixed;bottom:10px;right:10px;color:#9B6AF6;font-size:12px">T=Menu | Enter=Start</div>
+    // ИНИЦИАЛИЗАЦИЯ
+    function createMatrix(w, h) {
+      const matrix = []; while (h--) matrix.push(new Array(w).fill(0)); return matrix;
+    }
+    arena = createMatrix(10, 15);
+
+    function createPiece(type) {
+      if (type === 'T') return [[0,0,0],[1,1,1],[0,1,0]];
+      if (type === 'O') return [[2,2],[2,2]];
+      if (type === 'L') return [[0,3,0],[0,3,0],[0,3,3]];
+      if (type === 'J') return [[0,4,0],[0,4,0],[4,4,0]];
+      if (type === 'I') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]];
+      if (type === 'S') return [[0,6,6],[6,6,0],[0,0,0]];
+      if (type === 'Z') return [[7,7,0],[0,7,7],[0,0,0]];
+      return [[1,1],[1,1]];
+    }
+
+    function collide(arena, player) {
+      const [m, o] = [player.matrix, player.pos];
+      for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+          if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function merge(arena, player) {
+      player.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            arena[y + player.pos.y][x + player.pos.x] = value;
+          }
+        });
+      });
+    }
+
+    function playerReset() {
+      const pieces = 'TJLOSZI';
+      player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
+      player.pos.y = 0;
+      player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
+      if (collide(arena, player)) {
+        arena.forEach(row => row.fill(0));
+        player.score = 0;
+        gameStarted = false;
+        gameOver = true;
+        document.getElementById('startOverlay').textContent = 'GAME OVER - Press ENTER';
+        document.getElementById('startOverlay').style.display = 'block';
+      }
+    }
+
+    function playerDrop() {
+      player.pos.y++;
+      if (collide(arena, player)) {
+        player.pos.y--;
+        merge(arena, player);
+        playerReset();
+        arenaSweep();
+        updateScore();
+        return;
+      }
+      dropCounter = 0;
+    }
+
+    function playerMove(dir) {
+      player.pos.x += dir;
+      if (collide(arena, player)) player.pos.x -= dir;
+    }
+
+    function playerRotate(dir) {
+      const pos = player.pos.x;
+      let offset = 1;
+      rotate(player.matrix, dir);
+      while (collide(arena, player)) {
+        player.pos.x += offset;
+        offset = -(offset | -offset);
+      }
+      player.pos.x = pos;
+    }
+
+    function rotate(matrix, dir) {
+      for (let y = 0; y < matrix.length; ++y) {
+        for (let x = 0; x < y; ++x) {
+          [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+        }
+      }
+      if (dir > 0) {
+        matrix.forEach(row => row.reverse());
+      } else {
+        matrix.reverse();
+      }
+    }
+
+    function arenaSweep() {
+      let rowCount = 1;
+      outer: for (let y = arena.length - 1; y > 0; --y) {
+        for (let x = 0; x < arena[y].length; ++x) {
+          if (arena[y][x] === 0) {
+            continue outer;
+          }
+        }
+        const row = arena.splice(y, 1)[0].fill(0);
+        arena.unshift(row);
+        ++y;
+        player.score += rowCount * 10;
+        rowCount *= 2;
+      }
+    }
+
+    function drawMatrix(matrix, offset) {
+      matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            ctx.fillStyle = `hsl(${value * 40}, 100%, 50%)`;
+            ctx.fillRect(
+              (x + offset.x) * CELL_SIZE,
+              (y + offset.y) * CELL_SIZE,
+              CELL_SIZE - 1,
+              CELL_SIZE - 1
+            );
+          }
+        });
+      });
+    }
+
+    function draw() {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      drawMatrix(arena, {x: 0, y: 0});
+      
+      if (gameStarted && player.matrix) {
+        drawMatrix(player.matrix, player.pos);
+      }
+      
+      // Таймер турнира
+      if (timeLeft > 0) {
+        ctx.fillStyle = '#E37DF7';
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(
+          `⏱ ${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`,
+          12, 32
+        );
+      }
+    }
+
+    function updateScore() {
+      document.getElementById('score').textContent = player.score;
+      
+      if (player.score > topScore) {
+        topScore = player.score;
+        localStorage.setItem('cattris_top_score', topScore);
+      }
+      document.getElementById('topScore').textContent = topScore;
+      
+      // Отправка в турнир
+      if (channel && gameStarted) {
+        channel.send({
+          type: 'broadcast',
+          event: 'score',
+          payload: { name: playerName, score: player.score }
+        });
+      }
+    }
+
+    function update(time = 0) {
+      const deltaTime = time - lastTime;
+      lastTime = time;
+      dropCounter += deltaTime;
+      
+      if (dropCounter > dropInterval && gameStarted) {
+        playerDrop();
+      }
+      
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    function handleAction(action) {
+      if (action === 'start') {
+        gameOver = false;
+        gameStarted = true;
+        document.getElementById('startOverlay').style.display = 'none';
+        document.getElementById('startOverlay').textContent = 'Press ENTER to START';
+        arena.forEach(row => row.fill(0));
+        player.score = 0;
+        dropInterval = 800;
+        playerReset();
+        updateScore();
+        return;
+      }
+      
+      if (!gameStarted) return;
+      
+      if (action === 'left') playerMove(-1);
+      if (action === 'right') playerMove(1);
+      if (action === 'down') playerDrop();
+      if (action === 'up') playerRotate(1);
+    }
+
+    // ТУРНИРЫ
+    function toggleTournaments() {
+      const panel = document.getElementById('tournaments');
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function showTab(tab) {
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      document.getElementById('createTab').style.display = tab === 'create' ? 'block' : 'none';
+      document.getElementById('joinTab').style.display = tab === 'join' ? 'block' : 'none';
+    }
+
+    async function createRoom() {
+      const name = document.getElementById('roomName').value || 'Cat Battle';
+      const duration = parseInt(document.getElementById('duration').value) || 300;
+      const code = Math.random().toString(36).slice(2,6).toUpperCase();
+      
+      const { error } = await supabase
+        .from('tournaments')
+        .insert([{ code, name, duration }]);
+      
+      if (error) {
+        alert('Error creating room: ' + error.message);
+        return;
+      }
+      
+      currentRoom = { code, name, duration };
+      playerName = 'Host';
+      document.getElementById('roomInfo').textContent = `Room: ${code} ✅`;
+      document.getElementById('lobby').style.display = 'block';
+      document.getElementById('players').textContent = 'You: 0';
+      alert(`✅ Room ${code} created! Share the code!`);
+    }
+
+    async function joinRoom() {
+      const code = document.getElementById('roomCode').value.toUpperCase();
+      playerName = document.getElementById('playerName').value || 'Anonymous';
+      
+      if (!code) {
+        alert('Enter room code!');
+        return;
+      }
+      
+      currentRoom = { code };
+      channel = supabase.channel(`room:${code}`);
+      
+      await channel.subscribe();
+      
+      channel.on('broadcast', { event: 'score' }, ({ payload }) => {
+        leaderboard[payload.name] = payload.score;
+        updateLeaderboard();
+      });
+      
+      document.getElementById('roomInfo').textContent = `Room: ${code}`;
+      document.getElementById('lobby').style.display = 'block';
+      updateLeaderboard();
+    }
+
+    function updateLeaderboard() {
+      const playersDiv = document.getElementById('players');
+      const sorted = Object.entries(leaderboard)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 10);
+      
+      playersDiv.innerHTML = sorted.map(([name, score]) => 
+        `<div>${name}: ${score}</div>`
+      ).join('') || 'Waiting for players...';
+    }
+
+    function startTournament() {
+      timeLeft = currentRoom.duration || 300;
+      
+      const timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('countdown').textContent = 
+          `${Math.floor(timeLeft/60)}:${timeLeft%60.toString().padStart(2,'0')}`;
+        
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          alert('🏆 Tournament FINISHED!\nWinner: ' + 
+            Object.entries(leaderboard)
+              .sort(([,a], [,b]) => b - a)[0]?.[0] || 'No players');
+          document.getElementById('tournaments').style.display = 'block';
+          leaderboard = {};
+          updateLeaderboard();
+        }
+      }, 1000);
+      
+      document.getElementById('tournaments').style.display = 'none';
+      gameStarted = true;
+      playerReset();
+      updateScore();
+    }
+
+    // СОБЫТИЯ
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        toggleTournaments();
+      }
+      if (e.key === 'Enter') {
+        handleAction('start');
+        return;
+      }
+      if (!gameStarted) return;
+      
+      if (e.keyCode === 37) handleAction('left');
+      if (e.keyCode === 39) handleAction('right');
+      if (e.keyCode === 40) handleAction('down');
+      if (e.keyCode === 38) handleAction('up');
+    });
+
+    document.querySelectorAll('[data-action]').forEach(btn => {
+      const action = btn.getAttribute('data-action');
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        handleAction(action);
+        btn.classList.add('pressed');
+      });
+      btn.addEventListener('mouseup', (e) => {
+        e.preventDefault();
+        btn.classList.remove('pressed');
+      });
+      btn.addEventListener('mouseleave', () => btn.classList.remove('pressed'));
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleAction(action);
+        btn.classList.add('pressed');
+      });
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        btn.classList.remove('pressed');
+      });
+    });
+
+    // СТАРТ
+    updateScore();
+    playerReset();
+    update();
+  </script>
 </body>
 </html>
