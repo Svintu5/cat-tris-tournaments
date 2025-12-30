@@ -432,6 +432,12 @@ function initTetris() {
     logoBg.src = 'img/logo.png';
     logoBg.onload = () => { logoBgReady = true; };
 
+    // ✅ ГЛОБАЛЬНЫЙ ДОСТУП К ТЕТРИСУ
+  window.gameStarted = gameStarted;
+  window.playerReset = playerReset;
+  window.updateScore = updateScore;
+  window.player = player;
+  
     const CELL_SIZE = 24;
     const CELL_HEIGHT = 24;
 
