@@ -403,6 +403,11 @@
     const canvas = document.getElementById('game');
     const context = canvas.getContext('2d');
 
+    const { createClient } = supabase;
+    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Tournament globals
     window.tournament = {
