@@ -403,6 +403,16 @@
     const canvas = document.getElementById('game');
     const context = canvas.getContext('2d');
 
+
+    // Tournament globals
+    window.tournament = {
+      channel: null,
+      currentRoom: null,
+      timeLeft: 0,
+      playerName: 'Anonymous',
+      leaderboard: {}
+    };
+
     // --- переменные турнира ---
     const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
@@ -419,7 +429,6 @@
     let gameStarted = false;
 
     // даём турниру доступ к состоянию игры
-    window.player = player;
     window.gameStarted = gameStarted;
     function setGameStarted(value) {
       gameStarted = value;
