@@ -2,338 +2,76 @@
 <html>
 <head>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<title>Cat-tris TOURNAMENTS</title>
-<meta charset="UTF-8">
-<link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
-<style>
-* { box-sizing: border-box; }
-html, body {
-  height: 100%; margin: 0;
-  background: radial-gradient(circle at 20% 0%, #E37DF7 0%, rgba(227,125,247,0) 40%),
-              radial-gradient(circle at 80% 100%, #110FFF 0%, rgba(17,15,255,0) 45%),
-              radial-gradient(circle at 50% 40%, #9B6AF6 0%, rgba(155,106,246,0) 55%),
-              #000000;
-  background-repeat: no-repeat; background-size: cover; background-attachment: fixed;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Switzer', system-ui, sans-serif; color: #FFFFFF;
-}
-/* ... Весь твой CSS КОПИРУЙ ИЗ СТАРОГО КОДА ... */
-.tournaments-panel {
-  position: fixed; top: 20px; right: 20px; z-index: 999;
-  background: rgba(0,0,0,0.95); border: 2px solid #9B6AF6; border-radius: 16px;
-  padding: 16px; max-width: 280px; backdrop-filter: blur(12px); font-size: 12px;
-  box-shadow: 0 8px 32px rgba(155,106,246,0.3);
-}
-.tournaments-panel button, .tournaments-panel input {
-  width: 100%; margin: 4px 0; padding: 8px; border-radius: 8px; border: none;
-  background: #9B6AF6; color: white; font-weight: 500; cursor: pointer;
-}
-.tournaments-panel button:hover { background: #E37DF7; }
-.tournaments-panel .tab { width: 50%; font-size: 11px; }
-.tournaments-panel .tab.active { background: #E37DF7; }
+<title>Cat-tris</title>
+<style>body{margin:0;padding:20px;font-family:monospace;background:#000;color:#fff}
+#game{width:240px;height:360px;border:2px solid #9B6AF6;display:block}
+#tournaments{position:fixed;top:20px;right:20px;background:rgba(0,0,0,0.9);padding:15px;border:2px solid #9B6AF6;border-radius:10px;display:none}
+#tournaments button{width:100%;margin:3px 0;padding:8px;background:#9B6AF6;color:white;border:none;border-radius:5px;cursor:pointer}
+#tournaments input{width:100%;margin:3px 0;padding:8px;border-radius:5px;border:1px solid #9B6AF6;background:#111;color:white}
 </style>
 </head>
 <body>
-<div class="title-main">😻 CAT-TRIS TOURNAMENTS 😻</div>
-<div class="hint-bar">←→ Move | ↑ Rotate | ↓ Drop | T Tournaments</div>
+<canvas id="game"></canvas>
 
-<!-- ТВоя игровая машина (КОПИРУЙ ИЗ СТАРОГО КОДА) -->
-<div class="machine">
-  <div class="device">
-    <img src="img/hat.png" alt="" class="xmas-hat">
-    <div class="screen">
-      <div class="info">Score: <span id="score">0</span></div>
-      <div class="top-score">Top: <span id="topScore">0</span></div>
-      <div class="screen-inner">
-        <div id="startOverlay">Press Enter to start</div>
-        <canvas width="240" height="360" id="game"></canvas>
-      </div>
-    </div>
-    <!-- Твои контролы КОПИРУЙ -->
-  </div>
-  <div class="promo">
-    <span class="promo-text">Made for</span>
-    <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
-  </div>
+<div id="tournaments">
+<button onclick="toggle()">🏆 TOURNAMENTS</button>
+<div>
+<button onclick="show('create')">CREATE</button>
+<button onclick="show('join')">JOIN</button>
+
+<div id="create">
+<input id="name" value="Cat Battle">
+<input id="time" type="number" value="30">
+<button onclick="create()">CREATE</button>
 </div>
 
-<!-- ✅ ТУРНИРЫ -->
-<div id="tournaments" class="tournaments-panel" style="display:none">
-  <button onclick="toggleTournaments()">🏆 TOURNAMENTS (T)</button>
-  <div id="tournamentsContent">
-    <div style="display:flex; gap:4px">
-      <button class="tab active" onclick="showTab('create')">CREATE</button>
-      <button class="tab" onclick="showTab('join')">JOIN</button>
-    </div>
-    <div id="createTab">
-      <input id="roomName" placeholder="Room name" value="Koto Battle">
-      <input id="duration" type="number" value="300" min="60" max="900"> sec
-      <button onclick="createRoom()">CREATE ROOM</button>
-    </div>
-    <div id="joinTab" style="display:none">
-      <input id="roomCode" placeholder="ABC123">
-      <input id="playerName" placeholder="Your name">
-      <button onclick="joinRoomUI()">JOIN</button>
-    </div>
-    <div id="lobby" style="display:none">
-      <div id="roomInfo" style="font-weight:600; margin-bottom:8px"></div>
-      <div id="players" style="max-height:120px; overflow:auto; font-size:11px"></div>
-      <button id="startBtn" onclick="startTournament()">🚀 START (30s)</button>
-      <div id="countdown"></div>
-    </div>
-  </div>
+<div id="join" style="display:none">
+<input id="code" placeholder="CODE">
+<input id="player" placeholder="Name">
+<button onclick="join()">JOIN</button>
+</div>
+
+<div id="lobby" style="display:none">
+<div id="room"></div>
+<div id="players"></div>
+<button onclick="start()">START</button>
+</div>
+</div>
 </div>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const CELL_SIZE = 24;
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+canvas.width=240;canvas.height=360;
 
-// Supabase
-const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
-const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL='https://lsdwavmfkbfrnbmeqiov.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+const supabase=Supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
-// Глобальные переменные
-let arena = [];
-let player = { pos: {x:0,y:0}, matrix: null, score: 0 };
-let dropCounter = 0, dropInterval = 800, lastTime = 0;
-let gameStarted = false, gameOver = false;
-let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
-let channel = null, currentRoom = null, timeLeft = 0, playerName = '';
-let leaderboard = {};
+let arena=createMatrix(10,15),player={pos:{x:0,y:0},matrix:null,score:0},dropCounter=0,dropInterval=800,lastTime=0,gameStarted=false;
+let channel=null,currentRoom=null,timeLeft=0,leaderboard={};
 
-// Инициализация арены
-function createMatrix(w, h) {
-  const matrix = []; while (h--) matrix.push(new Array(w).fill(0)); return matrix;
-}
-arena = createMatrix(10, 15);
+function createMatrix(w,h){const m=[];while(h--)m.push(new Array(w).fill(0));return m}
+function createPiece(type){if(type==='T')return[[0,0,0],[1,1,1],[0,1,0]];return[[1,1],[1,1]]}
+function collide(a,p){const[m,o]=[p.matrix,p.pos];for(let y=0;y<m.length;++y)for(let x=0;x<m[y].length;++x)if(m[y][x]!==0&&(a[y+o.y]&&a[y+o.y][x+o.x])!==0)return true;return false}
+function merge(a,p){p.matrix.forEach((r,y)=>r.forEach((v,x)=>{if(v!==0)a[y+p.pos.y][x+p.pos.x]=v}))}
+function playerReset(){player.matrix=createPiece('TILOSZ'[Math.random()*6|0]);player.pos.y=0;player.pos.x=3;if(collide(arena,player)){arena.forEach(r=>r.fill(0));player.score=0;gameStarted=false}}
+function playerDrop(){player.pos.y++;if(collide(arena,player)){player.pos.y--;merge(arena,player);playerReset()}dropCounter=0}
+function playerMove(d){player.pos.x+=d;if(collide(arena,player))player.pos.x-=d}
+function updateScore(){document.getElementById('score').outerHTML=`Score: ${player.score}`;if(channel&&gameStarted)channel.send({type:'broadcast',event:'score',payload:{name:playerName,score:player.score}})}
 
-// Фигуры
-function createPiece(type) {
-  if (type === 'T') return [[0,0,0],[1,1,1],[0,1,0]];
-  if (type === 'O') return [[2,2],[2,2]];
-  if (type === 'L') return [[0,3,0],[0,3,0],[0,3,3]];
-  if (type === 'J') return [[0,4,0],[0,4,0],[4,4,0]];
-  if (type === 'I') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]];
-  if (type === 'S') return [[0,6,6],[6,6,0],[0,0,0]];
-  if (type === 'Z') return [[7,7,0],[0,7,7],[0,0,0]];
-}
+function draw(){ctx.fillStyle='#000';ctx.fillRect(0,0,240,360);drawMatrix(arena,{x:0,y:0});if(gameStarted&&player.matrix)drawMatrix(player.matrix,player.pos)}
+function drawMatrix(m,o){m.forEach((r,y)=>r.forEach((v,x)=>{if(v){ctx.fillStyle=`hsl(${v*40},100%,50%)`;ctx.fillRect((x+o.x)*24,(y+o.y)*24,23,23)}}))}
+function update(t=0){const d=t-lastTime;lastTime=t;dropCounter+=d;if(dropCounter>dropInterval&&gameStarted)playerDrop();draw();requestAnimationFrame(update)}
 
-// Коллизия, отрисовка, движение - твой код КОПИРУЙ ЗДЕСЬ
-function collide(arena, player) {
-  const [m, o] = [player.matrix, player.pos];
-  for (let y = 0; y < m.length; ++y) {
-    for (let x = 0; x < m[y].length; ++x) {
-      if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) return true;
-    }
-  }
-  return false;
-}
+function toggle(){document.getElementById('tournaments').style.display=document.getElementById('tournaments').style.display==='none'?'block':'none'}
+function show(tab){document.getElementById('create').style.display=tab==='create'?'block':'none';document.getElementById('join').style.display=tab==='join'?'block':'none'}
+async function create(){const name=document.getElementById('name').value,dur=parseInt(document.getElementById('time').value),code=Math.random().toString(36).slice(2,6).toUpperCase();await supabase.from('tournaments').insert({code,name,duration:dur});currentRoom={code,name,dur};join(code)}
+async function join(code=''){if(!code)code=document.getElementById('code').value.toUpperCase(),playerName=document.getElementById('player').value||'Anon';channel=supabase.channel('room:'+code);await channel.subscribe();channel.on('broadcast',{event:'score'},p=>{leaderboard[p.payload.name]=p.payload.score;document.getElementById('players').innerHTML=Object.entries(leaderboard).sort(([,a],[,b])=>b-a).map(([n,s])=>`${n}: ${s}`).join('<br>')});document.getElementById('room').textContent=`Room: ${code}`;document.getElementById('lobby').style.display='block'}
+function start(){timeLeft=currentRoom.duration;const t=setInterval(()=>{timeLeft--;if(timeLeft<=0){clearInterval(t);alert('FINISHED!');document.getElementById('tournaments').style.display='block'}},1000);document.getElementById('tournaments').style.display='none';gameStarted=true;playerReset()}
 
-function merge(arena, player) {
-  player.matrix.forEach((row, y) => {
-    row.forEach((value, x) => {
-      if (value !== 0) arena[y + player.pos.y][x + player.pos.x] = value;
-    });
-  });
-}
-
-function playerReset() {
-  const pieces = 'TJLOSZI';
-  player.matrix = createPiece(pieces[pieces.length * Math.random() | 0]);
-  player.pos.y = 0;
-  player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
-  if (collide(arena, player)) {
-    arena.forEach(row => row.fill(0));
-    player.score = 0; gameStarted = false; gameOver = true;
-    document.getElementById('startOverlay').textContent = 'Game Over - Press Enter';
-    document.getElementById('startOverlay').style.display = 'block';
-  }
-}
-
-function playerDrop() {
-  player.pos.y++;
-  if (collide(arena, player)) {
-    player.pos.y--; merge(arena, player); playerReset(); arenaSweep();
-  }
-  dropCounter = 0;
-}
-
-function playerMove(dir) { player.pos.x += dir; if (collide(arena, player)) player.pos.x -= dir; }
-function playerRotate(dir) {
-  const pos = player.pos.x; let offset = 1;
-  rotate(player.matrix, dir);
-  while (collide(arena, player)) { player.pos.x += offset; offset = -(offset | -offset); }
-  player.pos.x = pos;
-}
-
-function rotate(matrix, dir) {
-  for (let y = 0; y < matrix.length; ++y) {
-    for (let x = 0; x < y; ++x) [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
-  }
-  if (dir > 0) matrix.forEach(row => row.reverse()); else matrix.reverse();
-}
-
-function arenaSweep() {
-  let rowCount = 1;
-  outer: for (let y = arena.length - 1; y > 0; --y) {
-    for (let x = 0; x < arena[y].length; ++x) if (arena[y][x] === 0) continue outer;
-    const row = arena.splice(y, 1)[0].fill(0);
-    arena.unshift(row); ++y; player.score += rowCount * 10; rowCount *= 2;
-  }
-}
-
-function draw() {
-  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  drawMatrix(arena, {x: 0, y: 0});
-  if (gameStarted && player.matrix) drawMatrix(player.matrix, player.pos);
-  
-  // Таймер турнира
-  if (timeLeft > 0) {
-    ctx.fillStyle = '#E37DF7'; ctx.font = 'bold 18px monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(`⏱ ${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`, 8, 28);
-  }
-}
-
-function drawMatrix(matrix, offset) {
-  matrix.forEach((row, y) => {
-    row.forEach((value, x) => {
-      if (value !== 0) {
-        ctx.fillStyle = `hsl(${value * 40}, 100%, 50%)`;
-        ctx.fillRect((x + offset.x) * CELL_SIZE, (y + offset.y) * CELL_SIZE, CELL_SIZE-1, CELL_SIZE-1);
-      }
-    });
-  });
-}
-
-function updateScore() {
-  document.getElementById('score').textContent = player.score;
-  if (player.score > topScore) {
-    topScore = player.score;
-    localStorage.setItem('cattris_top_score', topScore);
-  }
-  document.getElementById('topScore').textContent = topScore;
-  
-  // Отправка в турнир
-  if (channel && gameStarted) {
-    channel.send({
-      type: 'broadcast', event: 'score',
-      payload: {name: playerName, score: player.score}
-    });
-  }
-}
-
-function update(time = 0) {
-  const deltaTime = time - lastTime; lastTime = time; dropCounter += deltaTime;
-  if (dropCounter > dropInterval && gameStarted) playerDrop();
-  draw(); requestAnimationFrame(update);
-}
-
-// Турниры
-function toggleTournaments() {
-  const panel = document.getElementById('tournaments');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function showTab(tab) {
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById('createTab').style.display = tab === 'create' ? 'block' : 'none';
-  document.getElementById('joinTab').style.display = tab === 'join' ? 'block' : 'none';
-}
-
-async function createRoom() {
-  const name = document.getElementById('roomName').value || 'Cat Battle';
-  const duration = parseInt(document.getElementById('duration').value);
-  const code = Math.random().toString(36).slice(2,6).toUpperCase();
-  await supabase.from('tournaments').insert({code, name, duration: duration});
-  currentRoom = {code, name, duration}; joinRoomUI(code, name);
-}
-
-async function joinRoomUI(code = null, name = null) {
-  if (code) {
-    document.getElementById('roomCode').value = code;
-    document.getElementById('roomName').value = name;
-  } else {
-    const inputCode = document.getElementById('roomCode').value.toUpperCase();
-    playerName = document.getElementById('playerName').value || 'Anonymous';
-    currentRoom = {code: inputCode};
-  }
-  
-  channel = supabase.channel('room:' + currentRoom.code);
-  await channel.subscribe();
-  
-  channel.on('broadcast', {event: 'score'}, ({payload}) => {
-    leaderboard[payload.name] = payload.score;
-    updateLeaderboard();
-  });
-  
-  document.getElementById('roomInfo').textContent = `Room: ${currentRoom.code}`;
-  document.getElementById('lobby').style.display = 'block';
-}
-
-function updateLeaderboard() {
-  const playersDiv = document.getElementById('players');
-  const sorted = Object.entries(leaderboard).sort(([,a],[,b]) => b-a);
-  playersDiv.innerHTML = sorted.slice(0,8).map(([n,s]) => `<div>${n}: ${s}</div>`).join('');
-}
-
-function startTournament() {
-  timeLeft = currentRoom.duration || 30;
-  const timer = setInterval(() => {
-    timeLeft--;
-    document.getElementById('countdown').textContent = 
-      `${Math.floor(timeLeft/60)}:${timeLeft%60.toString().padStart(2,'0')}`;
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      alert('🏆 Tournament FINISHED!');
-      document.getElementById('tournaments').style.display = 'block';
-    }
-  }, 1000);
-  
-  document.getElementById('tournaments').style.display = 'none';
-  gameStarted = true; playerReset(); updateScore();
-}
-
-// Управление
-function handleAction(action) {
-  if (action === 'start') {
-    gameOver = false; gameStarted = true;
-    document.getElementById('startOverlay').style.display = 'none';
-    arena.forEach(row => row.fill(0)); player.score = 0; playerReset();
-    return;
-  }
-  if (!gameStarted) return;
-  if (action === 'left') playerMove(-1);
-  if (action === 'right') playerMove(1);
-  if (action === 'down') playerDrop();
-  if (action === 'up') playerRotate(1);
-}
-
-// Клавиши
-document.addEventListener('keydown', e => {
-  if (e.key.toLowerCase() === 't') toggleTournaments();
-  if (e.key === 'Enter') handleAction('start');
-  if (!gameStarted) return;
-  if (e.keyCode === 37) handleAction('left');
-  if (e.keyCode === 39) handleAction('right');
-  if (e.keyCode === 40) handleAction('down');
-  if (e.keyCode === 38) handleAction('up');
-});
-
-// Кнопки
-document.querySelectorAll('[data-action]').forEach(btn => {
-  const action = btn.getAttribute('data-action');
-  const press = e => { e.preventDefault(); handleAction(action); btn.classList.add('pressed'); };
-  const release = e => { e.preventDefault(); btn.classList.remove('pressed'); };
-  btn.addEventListener('mousedown', press); btn.addEventListener('mouseup', release);
-  btn.addEventListener('touchstart', press); btn.addEventListener('touchend', release);
-});
-
-// Старт
-updateScore(); playerReset(); update();
+document.addEventListener('keydown',e=>{if(e.key==='t')toggle();if(e.key==='Enter')gameStarted=true,playerReset();if(!gameStarted)return;if(e.keyCode===37)playerMove(-1);if(e.keyCode===39)playerMove(1);if(e.keyCode===40)playerDrop();if(e.keyCode===38)playerRotate()});
+playerReset();updateScore();update();
 </script>
+<div style="position:fixed;bottom:10px;right:10px;color:#9B6AF6;font-size:12px">T=Menu | Enter=Start</div>
 </body>
 </html>
