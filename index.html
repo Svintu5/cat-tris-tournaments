@@ -369,6 +369,35 @@
       <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
     </div>
   </div>
+  
+  <!-- 🏆 ТУРНИРЫ -->
+<div id="tournaments" class="tournaments-panel" style="display: none;">
+  <button onclick="toggleTournaments()">🏆 TOURNAMENTS (T)</button>
+  
+  <div class="tournaments-tabs">
+    <button class="tab active" onclick="showTab('create')">CREATE</button>
+    <button class="tab" onclick="showTab('join')">JOIN</button>
+  </div>
+
+  <div id="createTab">
+    <input id="roomName" placeholder="Room name" value="Cat Battle">
+    <input id="duration" type="number" value="180" min="60" max="600"> sec
+    <button onclick="createRoom()">🚀 CREATE ROOM</button>
+  </div>
+
+  <div id="joinTab" style="display: none;">
+    <input id="roomCode" placeholder="ABC123" maxlength="6">
+    <input id="playerName" placeholder="Your name" value="Player">
+    <button onclick="joinRoom()">⚡ JOIN</button>
+  </div>
+
+  <div id="lobby" style="display: none;">
+    <div id="roomInfo" style="font-weight: 700; color: #E37DF7; text-align: center;"></div>
+    <div id="players">Waiting for players...</div>
+    <button id="startBtn" onclick="startTournament()">🎮 START TOURNAMENT</button>
+    <div id="countdown"></div>
+  </div>
+</div>
 
   <script>
     const canvas = document.getElementById('game');
