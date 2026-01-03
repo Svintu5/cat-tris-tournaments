@@ -276,15 +276,13 @@ document.getElementById('joinBtn').onclick = async () => {
       return;
     }
 
-    // ❗ если турнир уже стартовал – только заходим, НИЧЕГО не сохраняем
+    // после старта новых игроков НЕ пускаем
     if (room.status === 'started' || room.status === 'finished') {
       alert('🏁 Tournament already started!');
-      window.location.href =
-        `game.html?room=${roomCode}&name=${encodeURIComponent(playerName)}&role=player`;
       return;
     }
 
-    // турнир ещё не начался – можно спокойно дописать игрока и сохранить
+    // турнир ещё не начался – можно дописать игрока и сохранить
     if (!room.players.includes(playerName)) {
       room.players.push(playerName);
       room.scores = room.scores || {};
@@ -302,6 +300,7 @@ document.getElementById('joinBtn').onclick = async () => {
     alert('❌ Error joining room');
   }
 };
+
 </script>
 
 </body>
