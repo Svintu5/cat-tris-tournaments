@@ -240,7 +240,7 @@
     const code = document.getElementById('roomCode').value.trim().toUpperCase();
     
     if (!name) return alert('👤 Enter your nickname!');
-    if (!code || code.length !== 6) return alert('📝 Enter 6-char room code!');
+    if (!code || code.length !== 4) return alert('📝 Enter 4-char room code!');
     
     try {
       const { data: room } = await supabaseClient
