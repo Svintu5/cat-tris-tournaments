@@ -11,8 +11,22 @@
     throw new Error('No room code');
   }
 
-  const { createClient } = supabase;
-  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let supabaseClient = null;
+
+  // 🔥 ЖДЁМ ЗАГРУЗКУ SUPABASE
+  async function initSupabase() {
+    if (typeof supabase === 'undefined') {
+      console.log('⏳ Waiting for Supabase...');
+      setTimeout(initSupabase, 100);
+      return;
+    }
+    
+    const { createClient } = supabase;
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    console.log('✅ Supabase ready!');
+    await loadResults();
+  }
 
   async function loadResults() {
     console.log('🔄 Loading results for room:', roomCode);
@@ -62,17 +76,23 @@
           }).join('')}
         `;
       } else {
-        leaderboard.innerHTML = '<h2>FINAL RESULTS</h2><div>😿 No results found</div>';
+        leaderboard.innerHTML = `
+          <h2>FINAL RESULTS</h2>
+          <div style="color: #FF6B6B;">😿 No results found for room ${roomCode}</div>
+        `;
       }
     } catch (error) {
       console.error('❌ Error loading results:', error);
       document.getElementById('leaderboard').innerHTML = `
         <h2>ERROR</h2>
-        <div>Failed to load results. <a href="index.html">← Back to lobby</a></div>
+        <div style="color: #FF6B6B;">
+          Failed to load: ${error.message} 
+          <br><a href="index.html">← Back to lobby</a>
+        </div>
       `;
     }
   }
 
-  // Автозагрузка
-  loadResults();
+  // 🔥 СТАРТ
+  initSupabase();
 </script>
