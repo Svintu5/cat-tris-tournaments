@@ -1,6 +1,9 @@
-import { put, get } from '@vercel/blob';
+// api/tournament.js
+import { put } from '@vercel/blob';
 
 const roomKey = (code) => `tournaments/${code}.json`;
+const BLOB_BASE =
+  'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,17 +16,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing code or action' });
     }
 
+    // 🔹 чтение комнаты
     if (action === 'get_room') {
-      const result = await get(roomKey(code)); // читает JSON с сервера [web:248]
-      if (!result || !result.blob) {
-        return res.status(404).json({ error: 'Room not found' });
+      const url = `${BLOB_BASE}/${code}.json?download=1`;
+      const resp = await fetch(url); // серверный fetch, CORS не мешает [web:248]
+
+      if (!resp.ok) {
+        return res.status(resp.status).json({ error: 'Room not found' });
       }
 
-      const text = await result.blob.text();
-      const data = JSON.parse(text);
+      const data = await resp.json();
       return res.status(200).json(data);
     }
 
+    // 🔹 сохранение комнаты
     if (action === 'save_room') {
       if (!room) {
         return res.status(400).json({ error: 'Missing room' });
