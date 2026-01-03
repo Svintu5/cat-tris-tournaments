@@ -509,11 +509,12 @@ window.sendScore = async (finalScore) => {
 
     if (data.room.status === 'finished') {
       document.getElementById('status').textContent = '🏁 Турнир завершён!';
-      // редирект на экран результатов — передаём код комнаты, имя и роль
+
+      // редирект на экран результатов
       setTimeout(() => {
         window.location.href =
-          `tournament-end.html?room=${encodeURIComponent(roomCode)}&name=${encodeURIComponent(playerName)}&role=${encodeURIComponent(playerRole)}`;
-      }, 1500); // чуть подождать, чтобы игрок увидел статус
+          `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
+      }, 1500);
     } else {
       document.getElementById('status').textContent = '✅ Результат сохранён';
     }
@@ -521,6 +522,7 @@ window.sendScore = async (finalScore) => {
     console.error('Tournament error:', e);
   }
 };
+
 
 // ТЕТРИС ИГРА
     const canvas = document.getElementById('game');
