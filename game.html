@@ -480,6 +480,43 @@ if (playerRole === 'host') {
   };
 }
 
+// Общий поллинг состояния турнира для всех игроков
+setInterval(async () => {
+  try {
+    const res = await fetch('/api/tournament', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: roomCode,
+        action: 'state'
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.error) return;
+
+    // обновляем лидерборд
+    document.getElementById('leaderboard').innerHTML =
+      data.leaderboard.map(p =>
+        `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
+           🏅 #${p.rank} ${p.name}: ${p.score}
+         </div>`
+      ).join('');
+
+    // если турнир завершён — всех уводим на финальный экран
+    if (data.room.status === 'finished') {
+      document.getElementById('status').textContent = '🏁 Турнир завершён!';
+      setTimeout(() => {
+        window.location.href =
+          `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
+      }, 1500);
+    }
+  } catch (e) {
+    console.error('state poll error', e);
+  }
+}, 3000); // каждые 3 секунды
+
+  
 // Отправка очков в Blob
 window.sendScore = async (finalScore) => {
   try {
