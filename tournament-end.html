@@ -1,39 +1,129 @@
-<script>
-  // 🔥 ЖДЁМ DOM + STATIC FALLBACK (работает ВСЕГДА)
-  function initWhenReady() {
-    const roomTitle = document.getElementById('roomTitle');
-    const leaderboard = document.getElementById('leaderboard');
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>🏆 Cat-tris Tournament Results</title>
+  <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
+  <style>
+    /* ТВОИ СТИЛИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ */
+    * { box-sizing: border-box; margin: 0; }
+    html, body {
+      height: 100vh;
+      background:
+        radial-gradient(circle at 20% 0%, #FFD700 0%, rgba(255,215,0,0) 40%),
+        radial-gradient(circle at 80% 100%, #00FF88 0%, rgba(0,255,136,0) 45%),
+        radial-gradient(circle at 50% 40%, #FF6B9D 0%, rgba(255,107,157,0) 55%),
+        #0a0a1a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Switzer', sans-serif;
+      color: #FFFFFF;
+    }
+    .results-container {
+      text-align: center;
+      max-width: 500px;
+      padding: 40px;
+      background: rgba(0,0,0,0.9);
+      border: 3px solid #FFD700;
+      border-radius: 24px;
+      box-shadow: 0 0 60px rgba(255,215,0,0.5);
+      backdrop-filter: blur(20px);
+    }
+    .trophy { font-size: 80px; margin-bottom: 20px; }
+    .room-title { 
+      font-size: 28px; 
+      font-weight: 800; 
+      color: #FFD700; 
+      margin-bottom: 30px;
+      text-shadow: 0 0 20px #FFD700;
+      letter-spacing: 0.1em;
+    }
+    .leaderboard {
+      background: rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 30px 0;
+      border: 2px solid rgba(255,215,0,0.3);
+    }
+    .leaderboard h2 {
+      color: #00FF88;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 15px #00FF88;
+    }
+    .back-btn {
+      margin-top: 30px;
+      padding: 16px 40px;
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(45deg, #00FF88, #00D47F);
+      border: none;
+      border-radius: 50px;
+      color: #000;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(0,255,136,0.4);
+      transition: all 0.3s ease;
+    }
+    .back-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba(0,255,136,0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="results-container">
+    <div class="trophy">🏆</div>
+    <div class="room-title" id="roomTitle">Loading...</div>
     
-    if (!roomTitle || !leaderboard) {
-      setTimeout(initWhenReady, 50);
-      return;
+    <div class="leaderboard" id="leaderboard">
+      <h2>FINAL RESULTS</h2>
+      <div>Loading...</div>
+    </div>
+    
+    <button class="back-btn" onclick="window.location.href='index.html'">
+      🎮 NEW TOURNAMENT
+    </button>
+  </div>
+
+  <!-- 🔥 УДАЛИЛ Supabase script - больше не нужен -->
+  
+  <script>
+    // 🔥 STATIC VERSION (работает ВСЕГДА)
+    function initWhenReady() {
+      const roomTitle = document.getElementById('roomTitle');
+      const leaderboard = document.getElementById('leaderboard');
+      
+      if (!roomTitle || !leaderboard) {
+        setTimeout(initWhenReady, 50);
+        return;
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomCode = urlParams.get('room') || 'UNKNOWN';
+
+      roomTitle.textContent = `Tournament ${roomCode.toUpperCase()} - FINAL RESULTS`;
+      
+      leaderboard.innerHTML = `
+        <h2>🏆 CHAMPIONS 🏆</h2>
+        <div style="color: #FF6B6B; padding: 20px; font-size: 16px;">
+          <div>⚠️ Результаты будут доступны скоро!</div>
+          <div style="margin-top: 10px;">Спасибо за игру в Cat-tris! 😻</div>
+          <br>
+          <a href="index.html" style="color: #00FF88; font-weight: bold; font-size: 18px;">
+            🎮 НОВЫЙ ТУРНИР
+          </a>
+        </div>
+      `;
+
+      console.log('✅ tournament-end.html полностью готов!');
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomCode = urlParams.get('room') || 'UNKNOWN';
-
-    // 🔥 СТАТИЧНЫЙ РЕЗУЛЬТАТ (работает без Supabase!)
-    roomTitle.textContent = `Tournament ${roomCode.toUpperCase()} - FINAL RESULTS`;
-    
-    leaderboard.innerHTML = `
-      <h2>🏆 FINAL RESULTS 🏆</h2>
-      <div style="color: #FF6B6B; padding: 20px; font-size: 16px;">
-        <div>⚠️ Результаты временно недоступны</div>
-        <div style="margin-top: 10px;">Играйте в Cat-tris и создавайте новые турниры!</div>
-        <br>
-        <a href="index.html" style="color: #00FF88; font-weight: bold; font-size: 18px;">
-          🎮 НОВЫЙ ТУРНИР
-        </a>
-      </div>
-    `;
-
-    console.log('✅ tournament-end.html готов (static mode)');
-  }
-
-  // 🔥 ЗАПУСК ПОСЛЕ DOM
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initWhenReady);
-  } else {
-    initWhenReady();
-  }
-</script>
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initWhenReady);
+    } else {
+      initWhenReady();
+    }
+  </script>
+</body>
+</html>
