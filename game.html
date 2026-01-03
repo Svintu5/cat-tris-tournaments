@@ -331,6 +331,16 @@
     Loading tournament...
   </div>
 
+  <!-- LIVE ЛИДЕРБОРД -->
+<div id="liveLeaderboard" style="
+  position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.9); border: 2px solid #FFD700; border-radius: 16px;
+  padding: 16px 24px; max-height: 200px; overflow: auto; font-size: 14px;
+  backdrop-filter: blur(12px); z-index: 1000; min-width: 200px;">
+  <div style="font-weight: 800; color: #FFD700; margin-bottom: 8px;">🏆 LIVE</div>
+  Loading players...
+</div>
+
   <!-- ОСНОВНОЙ ЭКРАН -->
   <div class="title-main">😻 CAT-TRIS 😻</div>
   <div class="hint-bar">
@@ -708,6 +718,70 @@
         document.querySelector('[data-action="start"]').click();
       }
     }, 2000);
+
+    // 🔥 LIVE МУЛЬТИПЛЕЕР (добавь после initTetris)
+  async function initMultiplayer() {
+  const roomCode = new URLSearchParams(window.location.search).get('room');
+  const playerName = decodeURIComponent(new URLSearchParams(window.location.search).get('name') || 'Player');
+  
+  window.tournamentRoom = roomCode;
+  window.tournamentPlayer = playerName;
+  
+  // LIVE ЛИДЕРБОРД
+  const channel = window.supabaseClient
+    .channel(`tournament:${roomCode}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'tournament_scores',
+      filter: `room_code=eq.${roomCode}`
+    }, (payload) => {
+      updateLiveLeaderboard();
+    })
+    .subscribe();
+
+  // Синхронизация очков каждые 2 сек
+  setInterval(async () => {
+    if (window.tetris?.player?.score) {
+      await window.supabaseClient.from('tournament_scores').upsert({
+        room_code: roomCode,
+        player_name: playerName,
+        score: window.tetris.player.score
+      });
+    }
+  }, 2000);
+  
+  updateLiveLeaderboard();
+}
+
+async function updateLiveLeaderboard() {
+  const roomCode = window.tournamentRoom;
+  const { data: scores } = await window.supabaseClient
+    .from('tournament_scores')
+    .select('*')
+    .eq('room_code', roomCode)
+    .order('score', { ascending: false });
+  
+  const leaderboard = document.getElementById('liveLeaderboard');
+  if (scores?.length) {
+    leaderboard.innerHTML = `
+      <div style="font-weight: 800; color: #FFD700; margin-bottom: 8px;">🏆 LIVE</div>
+      ${scores.map(s => `
+        <div style="padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          ${s.player_name.padEnd(12)} <span style="float: right; color: #00FF88;">${s.score}</span>
+        </div>
+      `).join('')}
+    `;
+  } else {
+    leaderboard.innerHTML = '<div style="color: #888;">Waiting for players...</div>';
+  }
+}
+
+// ЗАПУСК после Supabase
+initSupabase().then(() => {
+  setTimeout(initMultiplayer, 1000);
+});
+
   </script>
 </body>
 </html>
