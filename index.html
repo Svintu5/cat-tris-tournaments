@@ -328,6 +328,42 @@
     ←→ Move | ↑ Rotate | ↓ Drop
   </div>
 
+  <!-- ЛЕНДИНГ ПАНЕЛЬ -->
+  <div id="landingPanel" style="
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.95); padding: 24px 32px; border-radius: 24px;
+    border: 3px solid #E37DF7; z-index: 999; backdrop-filter: blur(20px);
+    box-shadow: 0 20px 40px rgba(155,106,246,0.4); font-family: 'Switzer';">
+    
+    <div style="font-size: 18px; margin-bottom: 16px; color: #E37DF7; font-weight: 700;">
+      Tournament Edition
+    </div>
+    
+    <input id="landingPlayerName" placeholder="Enter your name" maxlength="12" style="
+      width: 220px; padding: 16px 20px; border: none; border-radius: 16px; 
+      font-size: 18px; font-weight: 600; text-align: center; margin-right: 12px;
+      background: rgba(255,255,255,0.95); color: #333;">
+      
+    <input id="landingRoomCode" placeholder="ABC123" maxlength="6" style="
+      width: 140px; padding: 16px 20px; border: none; border-radius: 16px; 
+      font-size: 18px; font-weight: 600; text-align: center; text-transform: uppercase;
+      background: rgba(255,255,255,0.95); color: #333; margin-right: 12px;">
+      
+    <button onclick="createNewTournament()" style="
+      padding: 16px 28px; background: linear-gradient(45deg, #00FF88, #00CC6A); 
+      color: #000; border: none; border-radius: 16px; font-size: 16px; font-weight: 700;
+      cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+      🚀 CREATE
+    </button>
+    
+    <button onclick="joinExistingTournament()" style="
+      padding: 16px 28px; background: linear-gradient(45deg, #FF6B6B, #FF8E8E); 
+      color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 700;
+      cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
+      ⚡ JOIN
+    </button>
+  </div>
+    
   <div class="machine">
     <div class="device">
       <img src="img/hat.png" alt="" class="xmas-hat">
@@ -369,6 +405,43 @@
       <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
     </div>
   </div>
+
+  <!-- 🎮 ЛОББИ ЭКРАН (новый блок) -->
+<div id="lobbyScreen" style="
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
+  background: linear-gradient(135deg, #9B6AF6 0%, #E37DF7 100%);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 1000; text-align: center; font-family: 'Switzer', sans-serif;">
+  
+  <h2 id="roomTitle" style="font-size: 48px; margin: 0 0 20px; color: #fff;">Room</h2>
+  
+  <div id="roomInfo" style="
+    font-size: 36px; font-weight: 800; color: #00FF88; 
+    background: rgba(0,255,136,0.2); padding: 20px 40px; 
+    border-radius: 24px; margin-bottom: 40px;">ABC123</div>
+  
+  <div id="playersList" style="
+    background: rgba(0,0,0,0.9); padding: 30px; border-radius: 24px; 
+    max-height: 300px; overflow: auto; max-width: 400px; font-size: 20px;
+    border: 2px solid #E37DF7;">Waiting for players...</div>
+  
+  <!-- КНОПКА START ТОЛЬКО ДЛЯ ХОСТА -->
+  <button id="startTournamentBtn" onclick="startTournamentFromLobby()" style="
+    display: none; padding: 24px 64px; margin-top: 40px; font-size: 28px; 
+    font-weight: 800; background: linear-gradient(45deg, #FFD700, #FFA500);
+    color: #000; border: none; border-radius: 32px; cursor: pointer;
+    box-shadow: 0 20px 40px rgba(255,215,0,0.4); text-transform: uppercase;">
+    🎮 START TOURNAMENT
+  </button>
+  
+  <!-- НАДПИСЬ ДЛЯ ИГРОКОВ -->
+  <div id="waitingMsg" class="waiting" style="
+    display: none; font-size: 24px; color: #FF6B6B; margin-top: 20px;
+    font-weight: 600; text-shadow: 0 0 10px rgba(255,107,107,0.5);">
+    ⏳ Waiting for host to start the tournament...
+  </div>
+</div>
+
   
   <!-- 🏆 ТУРНИРЫ -->
 <div id="tournaments" class="tournaments-panel" style="display: none;">
@@ -403,6 +476,92 @@
     const canvas = document.getElementById('game');
 const context = canvas.getContext('2d');
 
+// 🔥 НОВЫЕ ФУНКЦИИ ЛОББИ
+let currentRoom = null;
+let playerName = '';
+
+function showLobby(code, isHost = false) {
+  currentRoom = code;
+  document.getElementById('lobbyScreen').style.display = 'flex';
+  document.querySelector('.machine').style.display = 'none'; // скрываем тетрис
+  
+  // Настройка лобби
+  document.getElementById('roomTitle').textContent = `Room ${code}`;
+  document.getElementById('roomInfo').textContent = code;
+  document.getElementById('playersList').innerHTML = 'Host joined!<br>Waiting for players...';
+  
+  if (isHost) {
+    // ХОСТ видит кнопку START
+    document.getElementById('startTournamentBtn').style.display = 'block';
+    document.getElementById('waitingMsg').style.display = 'none';
+  } else {
+    // ИГРОКИ видят ожидание
+    document.getElementById('startTournamentBtn').style.display = 'none';
+    document.getElementById('waitingMsg').style.display = 'block';
+  }
+}
+
+function startTournamentFromLobby() {
+  if (!currentRoom) return alert('❌ No room!');
+  
+  // Запускаем турнир
+  document.getElementById('lobbyScreen').style.display = 'none';
+  document.querySelector('.machine').style.display = 'flex';
+  
+  // ТВОЙ СТАРЫЙ КОД startTournament()
+  window.tetris.gameStarted = true;
+  if (window.tetris && window.tetris.playerReset) {
+    window.tetris.playerReset();
+  }
+}
+    
+// 🔥 ЛЕНДИНГ + ЛОББИ ЛОГИКА
+let currentRoomCode = null;
+let currentPlayerName = '';
+
+async function createNewTournament() {
+  currentPlayerName = document.getElementById('landingPlayerName').value || 'Host';
+  if (!currentPlayerName) return alert('❌ Enter your name!');
+  
+  const code = Math.random().toString(36).slice(2,6).toUpperCase();
+  currentRoomCode = code;
+  
+  try {
+    await window.supabaseClient.from('tournaments').insert({
+      code: code,
+      name: `${currentPlayerName}'s Tournament`,
+      duration: 180,
+      host: currentPlayerName
+    });
+    
+    alert(`✅ Room ${code} created! Share the code!`);
+    showLobby(code, true); // хост
+  } catch (err) {
+    alert('❌ Error creating room');
+  }
+}
+
+async function joinExistingTournament() {
+  currentPlayerName = document.getElementById('landingPlayerName').value || 'Player';
+  const code = document.getElementById('landingRoomCode').value.toUpperCase();
+  
+  if (!currentPlayerName) return alert('❌ Enter your name!');
+  if (!code) return alert('❌ Enter room code!');
+  
+  try {
+    const { data, error } = await window.supabaseClient
+      .from('tournaments').select('*').eq('code', code).single();
+    
+    if (error || !data) return alert('❌ Room not found!');
+    
+    currentRoomCode = code;
+    alert(`✅ Joined room ${code}!`);
+    showLobby(code, false); // игрок
+  } catch (err) {
+    alert('❌ Connection error!');
+  }
+}    
+    
 // Ждём Supabase CDN
 function initSupabase() {
   if (typeof supabase === 'undefined') {
