@@ -153,6 +153,31 @@
       .logo { font-size: 28px; }
       button { padding: 16px 4px; font-size: 15px; }
     }
+
+    .promo {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #E6E6FF;
+  opacity: 0.9;
+}
+
+.promo-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px #110FFF);
+}
+
+.promo-text {
+  font-weight: 600;
+}
+    
   </style>
 </head>
 <body>
@@ -174,7 +199,10 @@
     </div>
   </div>
 
-  <div class="footer">Made for GenLayer</div>
+  <div class="promo">
+  <span class="promo-text">Made for</span>
+  <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
+</div>
 
   <script>
     // ТВОИ Supabase ключи из оригинального кода
