@@ -842,10 +842,10 @@ if (dropCounter > currentInterval) playerDrop();
       document.getElementById('topScore').textContent = topScore;
     }
 
- function handleAction(action) {
+function handleAction(action) {
   if (action === 'start') {
-    // хост может начать всегда, игроки — только после старта турнира
-    if (playerRole !== 'host' && tournamentStatus !== 'started') {
+    // до старта турнира никому нельзя начать игру
+    if (tournamentStatus === 'waiting') {
       startOverlay.textContent = 'Waiting for host to start';
       startOverlay.style.display = 'block';
       return;
