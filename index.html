@@ -240,7 +240,7 @@
     const room = {
       code: roomCode,
       host: hostName,
-      name: `${hostName || 'Host'}'s Cat Battle`,
+      name: `${hostName || 'Host'}'s Cat-tris Battle`,
       status: 'waiting',
       players: [hostName],
       scores: { [hostName]: 0 },
@@ -258,46 +258,50 @@
     }
   };
 
-  document.getElementById('joinBtn').onclick = async () => {
-    const nameInput = document.getElementById('playerName');
-    const playerName = (nameInput.value || 'Player').trim();
-    const roomInput = document.getElementById('roomCode');
-    const roomCode = roomInput.value.trim().toUpperCase();
+document.getElementById('joinBtn').onclick = async () => {
+  const nameInput = document.getElementById('playerName');
+  const playerName = (nameInput.value || 'Player').trim();
+  const roomInput = document.getElementById('roomCode');
+  const roomCode = roomInput.value.trim().toUpperCase();
 
-    if (!playerName) return alert('👤 Enter your nickname!');
-    if (!roomCode || roomCode.length !== 4) {
-      return alert('📝 Enter 4-char room code!');
+  if (!playerName) return alert('👤 Enter your nickname!');
+  if (!roomCode || roomCode.length !== 4) {
+    return alert('📝 Enter 4-char room code!');
+  }
+
+  try {
+    const room = await fetchRoom(roomCode);
+    if (!room) {
+      alert('❌ Room not found!');
+      return;
     }
 
-    try {
-      const room = await fetchRoom(roomCode);
-      if (!room) {
-        alert('❌ Room not found!');
-        return;
-      }
-
-      if (room.status === 'started') {
-        alert('🏁 Tournament already started!');
-        return;
-      }
-
-      if (!room.players.includes(playerName)) {
-        room.players.push(playerName);
-        room.scores = room.scores || {};
-        room.played = room.played || {};
-        room.scores[playerName] = room.scores[playerName] || 0;
-        room.played[playerName] = false;
-        await saveRoom(room);
-      }
-
-      alert(`✅ Joined ${room.name}!`);
+    // ❗ если турнир уже стартовал – только заходим, НИЧЕГО не сохраняем
+    if (room.status === 'started' || room.status === 'finished') {
+      alert('🏁 Tournament already started!');
       window.location.href =
         `game.html?room=${roomCode}&name=${encodeURIComponent(playerName)}&role=player`;
-    } catch (err) {
-      console.error(err);
-      alert('❌ Error joining room');
+      return;
     }
-  };
+
+    // турнир ещё не начался – можно спокойно дописать игрока и сохранить
+    if (!room.players.includes(playerName)) {
+      room.players.push(playerName);
+      room.scores = room.scores || {};
+      room.played = room.played || {};
+      room.scores[playerName] = room.scores[playerName] || 0;
+      room.played[playerName] = false;
+      await saveRoom(room);
+    }
+
+    alert(`✅ Joined ${room.name}!`);
+    window.location.href =
+      `game.html?room=${roomCode}&name=${encodeURIComponent(playerName)}&role=player`;
+  } catch (err) {
+    console.error(err);
+    alert('❌ Error joining room');
+  }
+};
 </script>
 
 </body>
