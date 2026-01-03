@@ -1,1055 +1,237 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <title>😻 Cat-tris GenLayer Edition</title>
   <meta charset="UTF-8">
+  <title>😻 Cat‑tris | Tournament Lobby</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; margin: 0; }
 
-    html, body {
-      height: 100%;
-      margin: 0;
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
       background:
-        radial-gradient(circle at 20% 0%, #E37DF7 0%, rgba(227,125,247,0) 40%),
-        radial-gradient(circle at 80% 100%, #110FFF 0%, rgba(17,15,255,0) 45%),
-        radial-gradient(circle at 50% 40%, #9B6AF6 0%, rgba(155,106,246,0) 55%),
-        #000000;
-      background-repeat: no-repeat;
-      background-size: cover;
-      background-attachment: fixed;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Switzer', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #FFFFFF;
+        radial-gradient(circle at 20% 20%, #E37DF7 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #110FFF 0%, transparent 50%),
+        #000;
+      font-family: 'Switzer', sans-serif;
+      color: #fff;
     }
 
-    .machine {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .device {
-      position: relative;
-      width: 380px;
-      padding: 20px 20px 28px;
-      border-radius: 32px;
-      background: #9B6AF6;
-      box-shadow:
-        0 0 0 4px #E37DF7 inset,
-        0 18px 40px rgba(0,0,0,0.65);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
-    }
-
-    .xmas-hat {
-      position: absolute;
-      top: -80px;
-      left: -50px;
-      width: 240px;
-      pointer-events: none;
-    }
-
-    .screen {
-      width: 100%;
-      height: 400px;
-      border-radius: 22px;
-      background: #000000;
-      box-shadow:
-        0 0 0 3px #282B5D,
-        0 0 30px #110FFF;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .screen-inner {
-      position: relative;
-      width: 240px;
-      height: 360px;
-      border-radius: 18px;
-      background: #000000;
-      box-shadow: 0 0 0 2px #282B5D inset;
-      border: 1px solid #282B5D;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    canvas {
-      display: block;
-      width: 100%;
-      height: 100%;
-      border-radius: 18px;
-      background: #000000;
-    }
-
-    .hint-bar {
-      position: absolute;
-      top: 60px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 22px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #FFFFFF;
-      text-shadow: 0 0 10px #110FFF;
-      pointer-events: none;
-    }
-
-    .info {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      padding: 6px 10px;
-      background: rgba(0, 0, 0, 0.7);
-      border-radius: 999px;
-      color: #FFFFFF;
-      font-size: 18px;
-      font-weight: 600;
-      text-shadow: 0 0 6px #110FFF;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    .top-score {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      padding: 6px 10px;
-      background: rgba(0, 0, 0, 0.7);
-      border-radius: 999px;
-      color: #FFFFFF;
-      font-size: 18px;
-      font-weight: 600;
-      text-shadow: 0 0 6px #110FFF;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    .title-main {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 32px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: #E37DF7;
-      text-shadow: 0 0 18px #9B6AF6;
-      pointer-events: none;
-    }
-
-    #startOverlay {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      padding: 10px 20px;
-      border-radius: 999px;
-      background: rgba(0, 0, 0, 0.85);
-      box-shadow: 0 0 18px #9B6AF6;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+    .lobby-container {
+      background: rgba(15, 0, 35, 0.95);
+      border: 2px solid #9B6AF6;
+      border-radius: 28px;
+      padding: 48px 60px;
+      box-shadow: 
+        0 0 0 1px #E37DF7,
+        0 0 60px rgba(155, 106, 246, 0.4);
       text-align: center;
-      border: 1px solid #9B6AF6;
-    }
-
-    .controls {
+      backdrop-filter: blur(20px);
+      max-width: 420px;
       width: 100%;
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 10px 0;
-      gap: 8px;
     }
 
-    .dpad {
-      width: 55%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    .logo {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      margin-bottom: 12px;
+      background: linear-gradient(45deg, #E37DF7, #9B6AF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(227, 125, 247, 0.5);
+      text-transform: uppercase;
     }
 
-    .buttons-right {
-      width: 35%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .dpad-container {
-      position: relative;
-      width: 150px;
-      height: 150px;
-    }
-
-    .btn-circle {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: none;
-      cursor: pointer;
-      outline: none;
-      background: radial-gradient(circle at 30% 30%, #fffca8 0%, #ffe600 40%, #ffc300 70%, #ff9e00 100%);
-      box-shadow:
-        0 4px 0 rgba(0,0,0,0.35),
-        0 0 12px rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
-      color: #4b0040;
-      text-shadow: 0 1px 0 rgba(255,255,255,0.6);
-      user-select: none;
-      transition: transform 0.05s ease, box-shadow 0.05s ease, filter 0.05s ease;
-    }
-
-    .btn-circle.blue {
-      background: radial-gradient(circle at 30% 30%, #c9f2ff 0%, #35d4ff 40%, #00a2ff 70%, #0070c0 100%);
-      color: #00163a;
-    }
-
-    .btn-circle.btn-start {
-      width: 96px;
-      height: 96px;
+    .subtitle {
       font-size: 16px;
-    }
-
-    .btn-circle.pressed {
-      transform: translateY(2px);
-      box-shadow:
-        0 1px 0 rgba(0,0,0,0.4),
-        0 0 8px rgba(0,0,0,0.5);
-      filter: brightness(0.9);
-    }
-
-    .dpad-button {
-      position: absolute;
-    }
-
-    .dpad-button[data-action="up"] {
-      top: 8px;
-      left: 50%;
-      transform: translate(-50%, 0);
-    }
-
-    .dpad-button[data-action="down"] {
-      bottom: 8px;
-      left: 50%;
-      transform: translate(-50%, 0);
-    }
-
-    .dpad-button[data-action="left"] {
-      left: 8px;
-      top: 50%;
-      transform: translate(0, -50%);
-    }
-
-    .dpad-button[data-action="right"] {
-      right: 8px;
-      top: 50%;
-      transform: translate(0, -50%);
-    }
-
-    .btn-stack {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-
-    .btn-label {
-      font-size: 8px;
-      text-transform: uppercase;
-      margin-top: 2px;
-    }
-
-    /* промо-бейдж под корпусом, справа */
-    .promo {
-      width: 380px;
-      margin-top: 8px;
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 6px;
-      font-size: 15px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
       color: #E6E6FF;
+      margin-bottom: 36px;
+      letter-spacing: 0.1em;
       opacity: 0.9;
     }
 
-    .promo-logo {
-      width: 100px;
-      height: 100px;
-      object-fit: contain;
-      filter: drop-shadow(0 0 8px #110FFF);
+    .input-group {
+      margin-bottom: 24px;
     }
 
-    .promo-text {
+    input {
+      width: 100%;
+      padding: 18px 24px;
+      border-radius: 16px;
+      border: 2px solid transparent;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.92);
+      color: #222;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #9B6AF6;
+      box-shadow: 0 0 20px rgba(155, 106, 246, 0.3);
+      transform: scale(1.02);
+    }
+
+    input::placeholder {
+      color: #888;
+      font-weight: 500;
+    }
+
+    .room-input {
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 18px 8px;
+      border-radius: 16px;
+      border: none;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .create-btn {
+      background: linear-gradient(45deg, #00FF88, #00D06A);
+      color: #000;
+      box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+    }
+
+    .create-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(0, 255, 136, 0.6);
+    }
+
+    .join-btn {
+      background: linear-gradient(45deg, #FF6B6B, #FF8B8B);
+      color: #fff;
+      box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    }
+
+    .join-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+    }
+
+    .footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #9B6AF6;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
       font-weight: 600;
     }
-  /* ТУРНИРЫ */
-.tournaments-panel {
-  position: fixed; top: 20px; right: 20px; z-index: 999;
-  background: rgba(0,0,0,0.95); border: 2px solid #9B6AF6;
-  border-radius: 16px; padding: 20px; max-width: 300px;
-  backdrop-filter: blur(12px); font-size: 14px;
-  box-shadow: 0 20px 40px rgba(155,106,246,0.4);
-}
-.tournaments-panel input, .tournaments-panel button {
-  width: 100%; margin: 6px 0; padding: 12px; border-radius: 12px;
-  border: none; background: #9B6AF6; color: white; font-weight: 600;
-  font-family: inherit; cursor: pointer;
-}
-.tournaments-panel button:hover { background: #E37DF7; }
-.tournaments-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-.tab { flex: 1; padding: 8px; font-size: 13px; }
-.tab.active { background: #E37DF7; }
-#players { max-height: 160px; overflow: auto; background: rgba(0,0,0,0.6); 
-  padding: 12px; border-radius: 12px; margin: 12px 0; font-size: 13px; }
+
+    @media (max-width: 480px) {
+      .lobby-container {
+        padding: 36px 40px;
+        margin: 0 20px;
+      }
+      .logo { font-size: 28px; }
+      button { padding: 16px 4px; font-size: 15px; }
+    }
   </style>
 </head>
 <body>
-  <div class="title-main">😻 CAT-TRIS 😻</div>
-  <div class="hint-bar">
-    ←→ Move | ↑ Rotate | ↓ Drop
-  </div>
+  <div class="lobby-container">
+    <div class="logo">😻 Cat-tris</div>
+    <div class="subtitle">Tournament Edition</div>
 
-  <!-- ЛЕНДИНГ ПАНЕЛЬ -->
-  <div id="landingPanel" style="
-    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.95); padding: 24px 32px; border-radius: 24px;
-    border: 3px solid #E37DF7; z-index: 999; backdrop-filter: blur(20px);
-    box-shadow: 0 20px 40px rgba(155,106,246,0.4); font-family: 'Switzer';">
-    
-    <div style="font-size: 18px; margin-bottom: 16px; color: #E37DF7; font-weight: 700;">
-      Tournament Edition
-    </div>
-    
-    <input id="landingPlayerName" placeholder="Enter your name" maxlength="12" style="
-      width: 220px; padding: 16px 20px; border: none; border-radius: 16px; 
-      font-size: 18px; font-weight: 600; text-align: center; margin-right: 12px;
-      background: rgba(255,255,255,0.95); color: #333;">
-      
-    <input id="landingRoomCode" placeholder="ABC123" maxlength="6" style="
-      width: 140px; padding: 16px 20px; border: none; border-radius: 16px; 
-      font-size: 18px; font-weight: 600; text-align: center; text-transform: uppercase;
-      background: rgba(255,255,255,0.95); color: #333; margin-right: 12px;">
-      
-    <button onclick="createNewTournament()" style="
-      padding: 16px 28px; background: linear-gradient(45deg, #00FF88, #00CC6A); 
-      color: #000; border: none; border-radius: 16px; font-size: 16px; font-weight: 700;
-      cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
-      🚀 CREATE
-    </button>
-    
-    <button onclick="joinExistingTournament()" style="
-      padding: 16px 28px; background: linear-gradient(45deg, #FF6B6B, #FF8E8E); 
-      color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 700;
-      cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
-      ⚡ JOIN
-    </button>
-  </div>
-    
-  <div class="machine">
-    <div class="device">
-      <img src="img/hat.png" alt="" class="xmas-hat">
-
-      <div class="screen">
-        <div class="info">
-          Score: <span id="score">0</span>
-        </div>
-        <div class="top-score">
-          Top: <span id="topScore">0</span>
-        </div>
-
-        <div class="screen-inner">
-          <div id="startOverlay">Press Enter to start</div>
-          <canvas width="240" height="360" id="game"></canvas>
-        </div>
-      </div>
-
-      <div class="controls">
-        <div class="dpad">
-          <div class="dpad-container">
-            <button class="btn-circle dpad-button" data-action="up">▲</button>
-            <button class="btn-circle dpad-button" data-action="down">▼</button>
-            <button class="btn-circle dpad-button" data-action="left">◀</button>
-            <button class="btn-circle dpad-button" data-action="right">▶</button>
-          </div>
-        </div>
-
-        <div class="buttons-right">
-          <div class="btn-stack">
-            <button class="btn-circle blue btn-start" data-action="start">START</button>
-          </div>
-        </div>
-      </div>
+    <div class="input-group">
+      <input id="playerName" placeholder="Enter your nickname" maxlength="12">
     </div>
 
-    <div class="promo">
-      <span class="promo-text">Made for</span>
-      <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
+    <div class="input-group">
+      <input id="roomCode" class="room-input" placeholder="ABC123" maxlength="6">
+    </div>
+
+    <div class="buttons">
+      <button class="create-btn" id="createBtn">🚀 CREATE</button>
+      <button class="join-btn" id="joinBtn">⚡ JOIN</button>
     </div>
   </div>
 
-  <!-- 🎮 ЛОББИ ЭКРАН (новый блок) -->
-<div id="lobbyScreen" style="
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-  background: linear-gradient(135deg, #9B6AF6 0%, #E37DF7 100%);
-  display: none; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 1000; text-align: center; font-family: 'Switzer', sans-serif;">
-  
-  <h2 id="roomTitle" style="font-size: 48px; margin: 0 0 20px; color: #fff;">Room</h2>
-  
-  <div id="roomInfo" style="
-    font-size: 36px; font-weight: 800; color: #00FF88; 
-    background: rgba(0,255,136,0.2); padding: 20px 40px; 
-    border-radius: 24px; margin-bottom: 40px;">ABC123</div>
-  
-  <div id="playersList" style="
-    background: rgba(0,0,0,0.9); padding: 30px; border-radius: 24px; 
-    max-height: 300px; overflow: auto; max-width: 400px; font-size: 20px;
-    border: 2px solid #E37DF7;">Waiting for players...</div>
-  
-  <!-- КНОПКА START ТОЛЬКО ДЛЯ ХОСТА -->
-  <button id="startTournamentBtn" onclick="startTournamentFromLobby()" style="
-    display: none; padding: 24px 64px; margin-top: 40px; font-size: 28px; 
-    font-weight: 800; background: linear-gradient(45deg, #FFD700, #FFA500);
-    color: #000; border: none; border-radius: 32px; cursor: pointer;
-    box-shadow: 0 20px 40px rgba(255,215,0,0.4); text-transform: uppercase;">
-    🎮 START TOURNAMENT
-  </button>
-  
-  <!-- НАДПИСЬ ДЛЯ ИГРОКОВ -->
-  <div id="waitingMsg" class="waiting" style="
-    display: none; font-size: 24px; color: #FF6B6B; margin-top: 20px;
-    font-weight: 600; text-shadow: 0 0 10px rgba(255,107,107,0.5);">
-    ⏳ Waiting for host to start the tournament...
-  </div>
-</div>
-
-  
-  <!-- 🏆 ТУРНИРЫ -->
-<div id="tournaments" class="tournaments-panel" style="display: none;">
-  <button onclick="toggleTournaments()">🏆 TOURNAMENTS (T)</button>
-  
-  <div class="tournaments-tabs">
-    <button class="tab active" onclick="showTab('create')">CREATE</button>
-    <button class="tab" onclick="showTab('join')">JOIN</button>
-  </div>
-
-  <div id="createTab">
-    <input id="roomName" placeholder="Room name" value="Cat Battle">
-    <input id="duration" type="number" value="180" min="60" max="600"> sec
-    <button onclick="createRoom()">🚀 CREATE ROOM</button>
-  </div>
-
-  <div id="joinTab" style="display: none;">
-    <input id="roomCode" placeholder="ABC123" maxlength="6">
-    <input id="playerName" placeholder="Your name" value="Player">
-    <button onclick="joinRoom()">⚡ JOIN</button>
-  </div>
-
-  <div id="lobby" style="display: none;">
-    <div id="roomInfo" style="font-weight: 700; color: #E37DF7; text-align: center;"></div>
-    <div id="players">Waiting for players...</div>
-    <button id="startBtn" onclick="startTournament()">🎮 START TOURNAMENT</button>
-    <div id="countdown"></div>
-  </div>
-</div>
+  <div class="footer">Made for GenLayer</div>
 
   <script>
-    const canvas = document.getElementById('game');
-const context = canvas.getContext('2d');
+    // ТВОИ Supabase ключи из оригинального кода
+    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
 
-// 🔥 НОВЫЕ ФУНКЦИИ ЛОББИ
-let currentRoom = null;
-let playerName = '';
+    const { createClient } = supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function showLobby(code, isHost = false) {
-  currentRoom = code;
-  document.getElementById('lobbyScreen').style.display = 'flex';
-  document.querySelector('.machine').style.display = 'none'; // скрываем тетрис
-  
-  // Настройка лобби
-  document.getElementById('roomTitle').textContent = `Room ${code}`;
-  document.getElementById('roomInfo').textContent = code;
-  document.getElementById('playersList').innerHTML = 'Host joined!<br>Waiting for players...';
-  
-  if (isHost) {
-    // ХОСТ видит кнопку START
-    document.getElementById('startTournamentBtn').style.display = 'block';
-    document.getElementById('waitingMsg').style.display = 'none';
-  } else {
-    // ИГРОКИ видят ожидание
-    document.getElementById('startTournamentBtn').style.display = 'none';
-    document.getElementById('waitingMsg').style.display = 'block';
-  }
-}
+    document.getElementById('createBtn').onclick = async () => {
+      const name = document.getElementById('playerName').value.trim() || 'Host';
+      if (!name) return alert('👤 Enter your nickname!');
 
-function startTournamentFromLobby() {
-  if (!currentRoom) return alert('❌ No room!');
-  
-  // Запускаем турнир
-  document.getElementById('lobbyScreen').style.display = 'none';
-  document.querySelector('.machine').style.display = 'flex';
-  
-  // ТВОЙ СТАРЫЙ КОД startTournament()
-  window.tetris.gameStarted = true;
-  if (window.tetris && window.tetris.playerReset) {
-    window.tetris.playerReset();
-  }
-}
-    
-// 🔥 ЛЕНДИНГ + ЛОББИ ЛОГИКА
-let currentRoomCode = null;
-let currentPlayerName = '';
-
-async function createNewTournament() {
-  currentPlayerName = document.getElementById('landingPlayerName').value || 'Host';
-  if (!currentPlayerName) return alert('❌ Enter your name!');
-  
-  const code = Math.random().toString(36).slice(2,6).toUpperCase();
-  currentRoomCode = code;
-  
-  try {
-    await window.supabaseClient.from('tournaments').insert({
-      code: code,
-      name: `${currentPlayerName}'s Tournament`,
-      duration: 180,
-      host: currentPlayerName
-    });
-    
-    alert(`✅ Room ${code} created! Share the code!`);
-    showLobby(code, true); // хост
-  } catch (err) {
-    alert('❌ Error creating room');
-  }
-}
-
-async function joinExistingTournament() {
-  currentPlayerName = document.getElementById('landingPlayerName').value || 'Player';
-  const code = document.getElementById('landingRoomCode').value.toUpperCase();
-  
-  if (!currentPlayerName) return alert('❌ Enter your name!');
-  if (!code) return alert('❌ Enter room code!');
-  
-  try {
-    const { data, error } = await window.supabaseClient
-      .from('tournaments').select('*').eq('code', code).single();
-    
-    if (error || !data) return alert('❌ Room not found!');
-    
-    currentRoomCode = code;
-    alert(`✅ Joined room ${code}!`);
-    showLobby(code, false); // игрок
-  } catch (err) {
-    alert('❌ Connection error!');
-  }
-}    
-    
-// Ждём Supabase CDN
-function initSupabase() {
-  if (typeof supabase === 'undefined') {
-    setTimeout(initSupabase, 100);
-    return;
-  }
-  
-  const { createClient } = supabase;
-  const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
-  
-  window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window.tournament = {
-    channel: null, currentRoom: null, timeLeft: 0, 
-    playerName: 'Anonymous', leaderboard: {}
-  };
-  
-  // Запускаем тетрис ПОСЛЕ Supabase
-  initTetris();
-}
-
-function initTetris() {
-  
-    // фон с логотипом
-    const logoBg = new Image();
-    let logoBgReady = false;
-    logoBg.src = 'img/logo.png';
-    logoBg.onload = () => { logoBgReady = true; };
-  
-    const CELL_SIZE = 24;
-    const CELL_HEIGHT = 24;
-
-    const CAT_IMAGES = [];
-    const CAT_SRC = [
-      'img/cat1.png',
-      'img/cat2.png',
-      'img/cat3.png',
-      'img/cat4.png',
-      'img/cat5.png',
-      'img/cat6.png',
-      'img/cat7.png',
-    ];
-
-    let imagesLoaded = 0;
-
-    CAT_SRC.forEach((src, i) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        imagesLoaded++;
-      };
-      CAT_IMAGES[i] = img;
-    });
-
-    const arena = createMatrix(10, 15);
-
-    let player = { pos: { x: 0, y: 0 }, matrix: null, score: 0 };
-    let dropCounter = 0;
-    let dropInterval = 800;
-    let lastTime = 0;
-
-    let fastDrop = false;
-
-    const SPEED_STEP = 0.95;
-    const MIN_DROP_INTERVAL = 120;
-
-let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
-
-let gameStarted = false;
-let gameOver = false;
-
-// 🔥 ГЛОБАЛЬНЫЙ ДОСТУП — ПОСЛЕ объявления переменных!
-window.tetris = {
-  gameStarted: false,
-  playerReset: null,
-  updateScore: null,
-  player: null
-};
-const startOverlay = document.getElementById('startOverlay');
-
-    function createMatrix(w, h) {
-      const matrix = [];
-      while (h--) matrix.push(new Array(w).fill(0));
-      return matrix;
-    }
-
-    function createPiece(type) {
-      if (type === 'T') return [[0,0,0],[1,1,1],[0,1,0]];
-      if (type === 'O') return [[2,2],[2,2]];
-      if (type === 'L') return [[0,3,0],[0,3,0],[0,3,3]];
-      if (type === 'J') return [[0,4,0],[0,4,0],[4,4,0]];
-      if (type === 'I') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]];
-      if (type === 'S') return [[0,6,6],[6,6,0],[0,0,0]];
-      if (type === 'Z') return [[7,7,0],[0,7,7],[0,0,0]];
-    }
-
-    function collide(arena, player) {
-      const [m, o] = [player.matrix, player.pos];
-      for (let y = 0; y < m.length; ++y) {
-        for (let x = 0; x < m[y].length; ++x) {
-          if (m[y][x] !== 0 &&
-             (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
-            return true;
-          }
-        }
+      const code = Math.random().toString(36).slice(2, 6).toUpperCase();
+      
+      try {
+        const { error } = await supabaseClient
+          .from('tournaments')
+          .insert({ 
+            code, 
+            name: `${name}'s Tournament`, 
+            host: name, 
+            duration: 180,
+            created_at: new Date().toISOString()
+          });
+        
+        if (error) throw error;
+        
+        // ПЕРЕХОД НА ИГРУ
+        window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=host`;
+      } catch (err) {
+        alert('❌ Error: ' + err.message);
       }
-      return false;
-    }
+    };
 
-    function merge(arena, player) {
-      player.matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-          if (value !== 0) {
-            arena[y + player.pos.y][x + player.pos.x] = value;
-          }
-        });
-      });
-    }
+    document.getElementById('joinBtn').onclick = async () => {
+      const name = document.getElementById('playerName').value.trim() || 'Player';
+      const code = document.getElementById('roomCode').value.trim().toUpperCase();
+      
+      if (!name) return alert('👤 Enter your nickname!');
+      if (!code || code.length !== 6) return alert('📝 Enter valid 6-char room code!');
 
-    function drawMatrix(matrix, offset) {
-      if (!matrix) return;
-      matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-          if (value !== 0 && imagesLoaded === CAT_SRC.length) {
-            const imgIndex = (value - 1) % CAT_IMAGES.length;
-            const img = CAT_IMAGES[imgIndex];
-            if (!img) return;
-            const px = (x + offset.x) * CELL_SIZE;
-            const py = (y + offset.y) * CELL_HEIGHT;
-            context.drawImage(img, px, py, CELL_SIZE, CELL_HEIGHT);
-          }
-        });
-      });
-    }
-
-    function draw() {
-      context.fillStyle = '#000000';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
-      const scaleX = canvas.width / (arena[0].length * CELL_SIZE);
-      const scaleY = canvas.height / (arena.length * CELL_HEIGHT);
-      const scale = Math.min(scaleX, scaleY);
-
-      context.save();
-      context.scale(scale, scale);
-
-      if (logoBgReady) {
-        context.globalAlpha = 0.22;
-        context.drawImage(
-          logoBg,
-          0, 0,
-          arena[0].length * CELL_SIZE,
-          arena.length * CELL_HEIGHT
-        );
-        context.globalAlpha = 1;
+      try {
+        const { data, error } = await supabaseClient
+          .from('tournaments')
+          .select('*')
+          .eq('code', code)
+          .single();
+        
+        if (error || !data) return alert('❌ Room not found! Create new or check code.');
+        
+        // ПЕРЕХОД НА ИГРУ
+        window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=player`;
+      } catch (err) {
+        alert('❌ Connection error!');
       }
-
-      drawMatrix(arena, { x: 0, y: 0 });
-
-      if (gameStarted && player.matrix) {
-        drawMatrix(player.matrix, player.pos);
-      }
-
-      context.restore();
-    }
-
-    function arenaSweep() {
-      let rowCount = 1;
-      outer: for (let y = arena.length - 1; y > 0; --y) {
-        for (let x = 0; x < arena[y].length; ++x) {
-          if (arena[y][x] === 0) continue outer;
-        }
-        const row = arena.splice(y, 1)[0].fill(0);
-        arena.unshift(row);
-        ++y;
-        player.score += rowCount * 10;
-        rowCount *= 2;
-
-        dropInterval = Math.max(MIN_DROP_INTERVAL, dropInterval * SPEED_STEP);
-      }
-      updateScore();
-    }
-
-    function playerDrop() {
-      player.pos.y++;
-      if (collide(arena, player)) {
-        player.pos.y--;
-        merge(arena, player);
-        playerReset();
-        arenaSweep();
-        updateScore();
-      }
-      dropCounter = 0;
-    }
-
-    function playerMove(dir) {
-      player.pos.x += dir;
-      if (collide(arena, player)) player.pos.x -= dir;
-    }
-
-    function playerReset() {
-      const pieces = 'TJLOSZI';
-      player.matrix = createPiece(pieces[(pieces.length * Math.random()) | 0]);
-      player.pos.y = 0;
-      player.pos.x =
-        (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
-      if (collide(arena, player)) {
-        arena.forEach(row => row.fill(0));
-        player.score = 0;
-        dropInterval = 800;
-
-        gameStarted = false;
-        gameOver = true;
-        startOverlay.textContent = 'Game Over Press Enter';
-        startOverlay.style.display = 'block';
-      }
-            // Синхронизация с глобальным объектом
-      window.tetris.gameStarted = gameStarted;
-      window.tetris.playerReset = playerReset;
-      window.tetris.player = player;
-    }
-
-    function playerRotate(dir) {
-      let offset = 1;
-      rotate(player.matrix, dir);
-      while (collide(arena, player)) {
-        player.pos.x += offset;
-        offset = -(offset | -offset);
-      }
-    }
-
-    function rotate(matrix, dir) {
-      for (let y = 0; y < matrix.length; ++y) {
-        for (let x = 0; x < y; ++x) {
-          [matrix[x][y], matrix[y][x]] =
-            [matrix[y][x], matrix[x][y]];
-        }
-      }
-      if (dir > 0) matrix.forEach(row => row.reverse());
-      else matrix.reverse();
-    }
-
-    function update(time = 0) {
-      if (!gameStarted) {
-        draw();
-        requestAnimationFrame(update);
-        return;
-      }
-      const deltaTime = time - lastTime;
-lastTime = time;
-dropCounter += deltaTime;
-
-let currentInterval = dropInterval;
-if (fastDrop) {
-  currentInterval = dropInterval * 0.15; // во много раз быстрее
-}
-
-if (dropCounter > currentInterval) playerDrop();
-      draw();
-      requestAnimationFrame(update);
-    }
-
-    function updateScore() {
-      document.getElementById('score').textContent = player.score;
-
-      if (player.score > topScore) {
-        topScore = player.score;
-        localStorage.setItem('cattris_top_score', topScore);
-      }
-      document.getElementById('topScore').textContent = topScore;
-
-      // Синхронизация
-      window.tetris.updateScore = updateScore;
-      if (window.tournament && window.tournament.currentRoom) {
-        window.tournament.leaderboard[window.tournament.playerName] = player.score;
-      }
-    }
-
-    function handleAction(action) {
-      if (action === 'start') {
-        gameOver = false;
-        gameStarted = true;
-        startOverlay.style.display = 'none';
-        startOverlay.textContent = 'Press Enter to start';
-        arena.forEach(row => row.fill(0));
-        player.score = 0;
-        dropInterval = 800;
-        playerReset();
-        lastTime = 0;
-        updateScore();
-        return;
-      }
-
-      if (!gameStarted) return;
-
-      if (action === 'left') playerMove(-1);
-      if (action === 'right') playerMove(1);
-      if (action === 'down') playerDrop();
-      if (action === 'up') playerRotate(1);
-
-      // Синхронизация состояния игры
-      window.tetris.gameStarted = gameStarted;
-    }
-
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Enter') {
-        handleAction('start');
-        return;
-      }
-
-      if (!gameStarted) return;
-
-      if (event.keyCode === 37) handleAction('left');
-      else if (event.keyCode === 39) handleAction('right');
-      else if (event.keyCode === 40) handleAction('down');
-      else if (event.keyCode === 38) handleAction('up');
-    });
-
-document.querySelectorAll('[data-action]').forEach(btn => {
-  const action = btn.getAttribute('data-action');
-
-  const press = e => {
-    e.preventDefault();
-    if (action === 'down') {
-      fastDrop = true;       // при удержании ▼ ускоряем
-    } else {
-      handleAction(action);
-    }
-    btn.classList.add('pressed');
-  };
-
-  const release = e => {
-    e.preventDefault();
-    if (action === 'down') {
-      fastDrop = false;      // отпустили ▼ — снова обычная скорость
-    }
-    btn.classList.remove('pressed');
-  };
-
-  btn.addEventListener('mousedown', press);
-  btn.addEventListener('mouseup', release);
-  btn.addEventListener('mouseleave', release);
-  btn.addEventListener('touchstart', press);
-  btn.addEventListener('touchend', release);
-});
-
-  // 🔥 Финальная синхронизация
-window.tetris.gameStarted = gameStarted;
-  
-playerReset();
-updateScore();
-update();
-}
-    
-// --- UI турнира ---
-
-function toggleTournaments() {
-  const panel = document.getElementById('tournaments');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function showTab(tab) {
-  const tabs = document.querySelectorAll('.tab');
-  tabs.forEach(btn => btn.classList.remove('active'));
-  // event.target работает только из onclick в HTML
-  // поэтому ориентируемся на id
-  document.querySelector(
-    tab === 'create' ? '.tab:nth-child(1)' : '.tab:nth-child(2)'
-  ).classList.add('active');
-
-  document.getElementById('createTab').style.display = tab === 'create' ? 'block' : 'none';
-  document.getElementById('joinTab').style.display = tab === 'join' ? 'block' : 'none';
-}
-
-// горячая клавиша T
-document.addEventListener('keydown', e => {
-  if (e.key.toLowerCase() === 't') {
-    toggleTournaments();
-  }
-});
-
-    // CREATE комнаты
-async function createRoom() {
-  const name = document.getElementById('roomName').value || 'Cat Battle';
-  const duration = parseInt(document.getElementById('duration').value) || 180;
-  const code = Math.random().toString(36).slice(2,6).toUpperCase();
-  
-  try {
-    const { error } = await window.supabaseClient.from('tournaments').insert({
-      code: code,
-      name: name,
-      duration: duration
-    });
-    
-    if (error) {
-      alert('❌ Error: ' + error.message);
-      return;
-    }
-    
-    window.tournament.currentRoom = { code, name, duration };
-    window.tournament.playerName = 'Host';
-    
-    document.getElementById('roomInfo').textContent = `Room: ${code} ✅`;
-    document.getElementById('lobby').style.display = 'block';
-    document.getElementById('players').textContent = 'Host: 0';
-    
-    alert(`✅ Room ${code} created! Share the code!`);
-  } catch (err) {
-    alert('❌ Connection error: ' + err.message);
-  }
-}
-async function joinRoom() {
-  const code = document.getElementById('roomCode').value.toUpperCase();
-  window.tournament.playerName = document.getElementById('playerName').value || 'Anonymous';
-  
-  if (!code) {
-    alert('❌ Enter room code!');
-    return;
-  }
-  
-  try {
-    const { data, error } = await window.supabaseClient
-      .from('tournaments')
-      .select('*')
-      .eq('code', code)
-      .single();
-    
-    if (error || !data) {
-      alert('❌ Room not found!');
-      return;
-    }
-    
-    window.tournament.currentRoom = data;
-    document.getElementById('roomInfo').textContent = `Room: ${code}`;
-    document.getElementById('lobby').style.display = 'block';
-    updateLeaderboard();
-  } catch (err) {
-    alert('❌ Connection error!');
-  }
-}
-  
-  // START турнира + лидерборд
-function startTournament() {
-  if (!window.tournament.currentRoom) {
-    alert('❌ Create or join room first!');
-    return;
-  }
-  
-  window.tournament.timeLeft = window.tournament.currentRoom.duration || 180;
-  
-  const timer = setInterval(() => {
-    window.tournament.timeLeft--;
-    document.getElementById('countdown').textContent = 
-      `${Math.floor(window.tournament.timeLeft/60)}:${(window.tournament.timeLeft%60).toString().padStart(2,'0')}`;
-
-        if (window.tetris && window.tetris.gameStarted) {
-      window.tournament.leaderboard[window.tournament.playerName] = 
-        window.tetris.player ? window.tetris.player.score : 0;
-      updateLeaderboard();
-    }
-    
-    if (window.tournament.timeLeft <= 0) {
-      clearInterval(timer);
-      const winner = Object.entries(window.tournament.leaderboard)
-        .sort(([,a], [,b]) => b - a)[0];
-      alert('🏆 FINISHED!\n' + (winner ? `${winner[0]}: ${winner[1]}` : 'No players'));
-      document.getElementById('tournaments').style.display = 'block';
-      window.tournament.leaderboard = {};
-      updateLeaderboard();
-    }
-  }, 1000);
-  
-  document.getElementById('tournaments').style.display = 'none';
-  window.tetris.gameStarted = true;
-  if (window.tetris && window.tetris.playerReset) {
-  window.tetris.playerReset();
-}
-}
-function updateLeaderboard() {
-  const playersDiv = document.getElementById('players');
-  const sorted = Object.entries(window.tournament.leaderboard)
-    .sort(([,a], [,b]) => b - a);
-  playersDiv.innerHTML = sorted.map(([name, score]) => 
-    `${name}: ${score}`
-  ).join('<br>') || 'Waiting for players...';
-}
-
-initSupabase();
+    };
   </script>
 </body>
 </html>
