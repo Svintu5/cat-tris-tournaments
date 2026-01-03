@@ -249,10 +249,11 @@
     if (!code || code.length !== 4) return alert('📝 Enter 4-char room code!');
     
     try {
-      const { data: room } = await supabaseClient
-        .from('tournament_rooms').select('*').eq('code', code).single();
-      
-      if (!room) return alert('❌ Room not found!');
+   const { data: room } = await supabaseClient
+  .from('tournament_rooms').select('*').eq('code', code).single();
+
+if (!room) return alert('❌ Room not found!');
+if (room.status === 'started') return alert('🏁 Турнир уже начался!\nНельзя присоединиться.');
       
       await supabaseClient.from('tournament_players').insert({
         room_code: code, player_name: name, score: 0
