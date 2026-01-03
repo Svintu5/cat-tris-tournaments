@@ -327,10 +327,9 @@
 </head>
 <body>
   <!-- 🔥 ТУРНИРНАЯ ИНФОРМАЦИЯ -->
-<div class="tournament-info
-  ROOM: <span id="roomDisplay">Loading...</span> | <span id="playerDisplay">Loading...</span>
+<div class="tournament-info" style="display: none;">
+  Loading...
 </div>
-
   <!-- ОСНОВНОЙ ЭКРАН -->
   <div class="title-main">😻 CAT-TRIS 😻</div>
   <div class="hint-bar">
@@ -392,22 +391,30 @@
       throw new Error('No room code provided');
     }
 
-    // 🔥 2. INIT SUPABASE
-    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+  // 🔥 ГЛОБАЛЬНЫЙ SUPABASE КЛИЕНТ (ОДИН РАЗ!)
+  const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
 
+  let supabaseClient = null;
+
+  // 🔥 ИНИЦИАЛИЗАЦИЯ Supabase (ТОЛЬКО ОДИН РАЗ)
   async function initSupabase() {
-  if (typeof supabase === 'undefined') {
-    setTimeout(initSupabase, 100);
-    return;
-  }
-  
-  const { createClient } = supabase;
-  window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  
-  // Показываем комнату
-  document.getElementById('roomDisplay').textContent = roomCode.toUpperCase();
-  document.getElementById('playerDisplay').textContent = `${playerName} (${playerRole.toUpperCase()})`;
+    if (typeof supabase === 'undefined') {
+      setTimeout(initSupabase, 100);
+      return;
+    }
+    
+    if (supabaseClient) return supabaseClient; // Уже создан
+    
+    const { createClient } = supabase;
+    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = supabaseClient;
+
+    // 🔥 ИСПРАВЛЕННЫЙ HTML для турнирной информации
+    document.querySelector('.tournament-info').innerHTML = `
+      ROOM: <span id="roomDisplay">${roomCode.toUpperCase()}</span> | 
+      <span id="playerDisplay">${playerName} (${playerRole.toUpperCase()})</span>
+    `;
       
       // 🔥 ЗАПУСК ТЕТРИСА
       initTetris();
