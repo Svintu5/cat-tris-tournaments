@@ -5,5 +5,21 @@
   "type": "module",
   "dependencies": {
     "@vercel/blob": "latest"
-  }
+  },
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Svintu5/cat-tris-tournaments.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Svintu5/cat-tris-tournaments/issues"
+  },
+  "homepage": "https://github.com/Svintu5/cat-tris-tournaments#readme"
 }

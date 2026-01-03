@@ -16,7 +16,9 @@ async function loadRoom(code) {
 async function saveRoom(room) {
   await put(roomKey(room.code), JSON.stringify(room, null, 2), {
     contentType: 'application/json',
-    access: 'public'
+    access: 'public',
+    addRandomSuffix: false,
+    allowOverwrite: true
   });
 }
 
