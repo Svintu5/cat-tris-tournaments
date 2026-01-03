@@ -206,62 +206,58 @@
   <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
 </div>
 
-  <script>
-    // ТВОИ Supabase ключи из оригинального кода
-    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+ <script>
+  const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+  
+  const { createClient } = supabase;
+  const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const { createClient } = supabase;
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    document.getElementById('createBtn').onclick = async () => {
-      const name = document.getElementById('playerName').value.trim() || 'Host';
-      if (!name) return alert('👤 Enter your nickname!');
-
-      const code = Math.random().toString(36).slice(2, 6).toUpperCase();
+  document.getElementById('createBtn').onclick = async () => {
+    const name = document.getElementById('playerName').value.trim() || 'Host';
+    if (!name) return alert('👤 Enter your nickname!');
+    
+    const code = Math.random().toString(36).slice(2, 6).toUpperCase();
+    
+    try {
+      await supabaseClient.from('tournament_rooms').insert({
+        code, name: `${name}'s Cat Battle`, host: name, status: 'waiting'
+      });
       
-      try {
-        const { error } = await supabaseClient
-          .from('tournaments')
-          .insert({ 
-            code, 
-            name: `${name}'s Tournament`, 
-            host: name, 
-            duration: 180,
-            created_at: new Date().toISOString()
-          });
-        
-        if (error) throw error;
-        
-        // ПЕРЕХОД НА ИГРУ
-        window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=host`;
-      } catch (err) {
-        alert('❌ Error: ' + err.message);
-      }
-    };
-
-    document.getElementById('joinBtn').onclick = async () => {
-      const name = document.getElementById('playerName').value.trim() || 'Player';
-      const code = document.getElementById('roomCode').value.trim().toUpperCase();
+      await supabaseClient.from('tournament_players').insert({
+        room_code: code, player_name: name, score: 0
+      });
       
-      if (!name) return alert('👤 Enter your nickname!');
-      if (!code || code.length !== 6) return alert('📝 Enter valid 6-char room code!');
+      alert(`✅ Room ${code} created! Share the code!`);
+      window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=host`;
+    } catch (err) {
+      alert('❌ Error: ' + err.message);
+    }
+  };
 
-      try {
-        const { data, error } = await supabaseClient
-          .from('tournaments')
-          .select('*')
-          .eq('code', code)
-          .single();
-        
-        if (error || !data) return alert('❌ Room not found! Create new or check code.');
-        
-        // ПЕРЕХОД НА ИГРУ
-        window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=player`;
-      } catch (err) {
-        alert('❌ Connection error!');
-      }
-    };
-  </script>
+  document.getElementById('joinBtn').onclick = async () => {
+    const name = document.getElementById('playerName').value.trim() || 'Player';
+    const code = document.getElementById('roomCode').value.trim().toUpperCase();
+    
+    if (!name) return alert('👤 Enter your nickname!');
+    if (!code || code.length !== 6) return alert('📝 Enter 6-char room code!');
+    
+    try {
+      const { data: room } = await supabaseClient
+        .from('tournament_rooms').select('*').eq('code', code).single();
+      
+      if (!room) return alert('❌ Room not found!');
+      
+      await supabaseClient.from('tournament_players').insert({
+        room_code: code, player_name: name, score: 0
+      });
+      
+      alert(`✅ Joined ${room.name}!`);
+      window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=player`;
+    } catch (err) {
+      alert('❌ Error: ' + err.message);
+    }
+  };
+</script>
 </body>
 </html>
