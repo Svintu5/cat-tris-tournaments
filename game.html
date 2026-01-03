@@ -423,15 +423,13 @@ const BLOB_BASE =
   'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
 async function fetchRoom(roomCode) {
-  const roomUrl = `${BLOB_BASE}/${roomCode}.json?download=1`;
-  const res = await fetch(roomUrl);
-  if (!res.ok) {
-    // 404 → комнаты ещё нет
-    return null;
-  }
+  const roomUrl =
+    `${BLOB_BASE}/${roomCode}.json?download=1&_=${Date.now()}`;
+  const res = await fetch(roomUrl, { cache: 'no-store' });
+  if (!res.ok) return null;
   return await res.json();
 }
-
+ 
 async function saveRoom(room) {
   await fetch('/api/tournament', {
     method: 'POST',
@@ -455,6 +453,28 @@ if (!roomCode) {
   throw new Error('No room code');
 }
 
+// 👥 Регистрация игрока в комнате (для любого role)
+(async () => {
+  try {
+    const room = await fetchRoom(roomCode);
+    if (!room) return;
+
+    room.players = room.players || [];
+    room.scores = room.scores || {};
+    room.played = room.played || {};
+
+    if (!room.players.includes(playerName)) {
+      room.players.push(playerName);
+      room.scores[playerName] = 0;
+      room.played[playerName] = false;
+
+      await saveRoom(room);
+    }
+  } catch (e) {
+    console.error('join room error', e);
+  }
+})();
+  
 // Турнирный UI справа
 const tourUI = document.createElement('div');
 tourUI.id = 'tourUI';
