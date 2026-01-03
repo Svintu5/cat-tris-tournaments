@@ -227,6 +227,10 @@
       await supabaseClient.from('tournament_players').insert({
         room_code: code, player_name: name, score: 0
       });
+
+      await supabaseClient.from('tournament_scores').upsert({
+        room_code: code, player_name: name, score: 0
+      });
       
       alert(`✅ Room ${code} created! Share the code!`);
       window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=host`;
@@ -249,6 +253,10 @@
       if (!room) return alert('❌ Room not found!');
       
       await supabaseClient.from('tournament_players').insert({
+        room_code: code, player_name: name, score: 0
+      });
+
+      await supabaseClient.from('tournament_scores').upsert({
         room_code: code, player_name: name, score: 0
       });
       
