@@ -89,7 +89,7 @@ export default async function handler(req, res) {
     return res.json({ room });
   }
 
-  // SUBMIT SCORE — завершает турнир
+// SUBMIT SCORE — завершает турнир
   if (action === 'submit_score') {
     const room = await loadRoom(code);
     if (!room) {
@@ -104,6 +104,10 @@ export default async function handler(req, res) {
     const best = Math.max(prev, Number(score) || 0);
     room.scores[playerName] = best;
 
+    // отмечаем, что игрок закончил
+    room.played = room.played || {};
+    room.played[playerName] = true;
+
     const leaderboard = Object.entries(room.scores)
       .sort((a, b) => b[1] - a[1])
       .map(([name, sc], index) => ({
@@ -112,36 +116,12 @@ export default async function handler(req, res) {
         score: sc
       }));
 
-    room.status = 'finished';
+    // проверяем, все ли уже сыграли
+    const allDone = room.players.every(name => room.played?.[name]);
+
+    room.status = allDone ? 'finished' : 'started';
 
     await saveRoom(room);
-
-    return res.json({
-      room: {
-        code: room.code,
-        name: room.name,
-        status: room.status,
-        players: room.players
-      },
-      leaderboard
-    });
-  }
-
-  // STATE — для tournament-end.html
-  if (action === 'state') {
-    const room = await loadRoom(code);
-    if (!room) {
-      return res.status(400).json({ error: 'Room not found' });
-    }
-
-    room.scores = room.scores || {};
-    const leaderboard = Object.entries(room.scores)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, sc], index) => ({
-        rank: index + 1,
-        name,
-        score: sc
-      }));
 
     return res.json({
       room: {
