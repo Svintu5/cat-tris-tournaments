@@ -791,7 +791,10 @@ let tournamentFinishCheck = null;
 async function checkTournamentFinish() {
   if (!supabaseClient || !roomCode) return;
   
+  console.log('🔍 Checking tournament finish...'); // DEBUG
+  
   try {
+    // Проверяем статус комнаты
     const { data: room } = await supabaseClient
       .from('tournament_rooms')
       .select('status')
@@ -799,47 +802,64 @@ async function checkTournamentFinish() {
       .single();
     
     if (room?.status === 'finished') {
+      console.log('✅ Tournament already finished');
       window.location.href = `tournament-end.html?room=${roomCode}`;
       return;
     }
     
+    // Всех игроков комнаты
     const { data: players } = await supabaseClient
       .from('tournament_players')
       .select('player_name')
       .eq('room_code', roomCode);
     
+    console.log('👥 Players:', players?.length || 0);
+    
+    if (!players || players.length === 0) return;
+    
+    // Очки всех игроков
     const { data: scores } = await supabaseClient
       .from('tournament_scores')
       .select('player_name,score')
       .eq('room_code', roomCode);
     
-    if (!players || players.length === 0) return;
+    console.log('📊 Scores:', scores);
     
-    const allPlayed = players.every(p => 
-      scores?.find(s => s.player_name === p.player_name && s.score > 0)
-    );
+    // ✅ Все сыграли (score > 0)
+    const allPlayed = players.every(p => {
+      const playerScore = scores?.find(s => s.player_name === p.player_name);
+      return playerScore && playerScore.score > 0;
+    });
     
-    if (allPlayed && scores?.length > 0) {
-      await supabaseClient
+    console.log('🎯 All played:', allPlayed);
+    
+    if (allPlayed) {
+      console.log('🏁 Finishing tournament...');
+      const { error } = await supabaseClient
         .from('tournament_rooms')
         .update({ status: 'finished' })
         .eq('code', roomCode);
       
-      setTimeout(() => {
-        window.location.href = `tournament-end.html?room=${roomCode}`;
-      }, 2000);
+      if (!error) {
+        console.log('✅ Status updated to finished');
+        setTimeout(() => {
+          window.location.href = `tournament-end.html?room=${roomCode}`;
+        }, 1500);
+      }
     }
   } catch (e) {
-    console.log('Finish check error:', e);
+    console.error('❌ Finish check error:', e);
   }
 }
 
-// 🔥 ЗАПУСК ПРОВЕРКИ
-tournamentFinishCheck = setInterval(checkTournamentFinish, 4000);
-  
   // 🔥 ЗАПУСК
   initSupabase();
 
+    // 🔥 АВТОПРОВЕРКА ЗАВЕРШЕНИЯ (ЗАПУСК ТОЛЬКО ПОСЛЕ SUPABASE)
+  if (!tournamentFinishCheck) {
+    tournamentFinishCheck = setInterval(checkTournamentFinish, 3000);
+  }
+  
   // 🔥 ESC для хоста
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && playerRole === 'host') {
