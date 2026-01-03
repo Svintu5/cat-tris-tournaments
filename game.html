@@ -616,17 +616,25 @@
       }
 
       function updateScore() {
-        document.getElementById('score').textContent = player.score;
-        if (player.score > topScore) {
-          topScore = player.score;
-          localStorage.setItem('cattris_top_score', topScore);
-        }
-        document.getElementById('topScore').textContent = topScore;
-        window.tetris.updateScore = updateScore;
-        if (window.tournament) {
-          window.tournament.leaderboard[window.tournament.playerName] = player.score;
-        }
-      }
+  document.getElementById('score').textContent = player.score;
+  if (player.score > topScore) {
+    topScore = player.score;
+    localStorage.setItem('cattris_top_score', topScore);
+  }
+  document.getElementById('topScore').textContent = topScore;
+  
+  // 🔥 ОТПРАВКА ОЧКОВ В SUPABASE КАЖДЫЕ 5 СЕКУНД
+  if (window.sendScoreInterval) clearInterval(window.sendScoreInterval);
+  window.sendScoreInterval = setInterval(async () => {
+    if (window.supabaseClient && player.score > 0) {
+      await window.supabaseClient.from('tournament_scores').upsert({
+        room_code: roomCode,
+        player_name: playerName,
+        score: player.score
+      }, { onConflict: 'room_code,player_name' });
+    }
+  }, 5000);
+}
 
       function handleAction(action) {
         if (action === 'start') {
