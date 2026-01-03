@@ -208,7 +208,7 @@
 <script>
 // Vercel Blob API
 async function apiCall(code, action, data = {}) {
-  const res = await fetch(`/api/tournament/${code}`, {
+    const res = await fetch(`/api/tournament`, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({action, ...data})
