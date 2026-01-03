@@ -5,69 +5,99 @@
   <title>🏆 Cat-tris Tournament Results</title>
   <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
   <style>
-    /* ТВОИ СТИЛИ ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ */
     * { box-sizing: border-box; margin: 0; }
+
     html, body {
       height: 100vh;
       background:
-        radial-gradient(circle at 20% 0%, #FFD700 0%, rgba(255,215,0,0) 40%),
-        radial-gradient(circle at 80% 100%, #00FF88 0%, rgba(0,255,136,0) 45%),
-        radial-gradient(circle at 50% 40%, #FF6B9D 0%, rgba(255,107,157,0) 55%),
-        #0a0a1a;
+        radial-gradient(circle at 20% 20%, #E37DF7 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #110FFF 0%, transparent 50%),
+        #000000;
       display: flex;
       align-items: center;
       justify-content: center;
       font-family: 'Switzer', sans-serif;
       color: #FFFFFF;
+      padding: 20px;
     }
+
     .results-container {
       text-align: center;
-      max-width: 500px;
-      padding: 40px;
-      background: rgba(0,0,0,0.9);
-      border: 3px solid #FFD700;
-      border-radius: 24px;
-      box-shadow: 0 0 60px rgba(255,215,0,0.5);
+      max-width: 480px;
+      width: 100%;
+      padding: 40px 48px;
+      background: rgba(15, 0, 35, 0.95);
+      border-radius: 28px;
+      border: 2px solid #9B6AF6;
+      box-shadow:
+        0 0 0 1px #E37DF7,
+        0 0 60px rgba(155,106,246,0.4);
       backdrop-filter: blur(20px);
     }
-    .trophy { font-size: 80px; margin-bottom: 20px; }
-    .room-title { 
-      font-size: 28px; 
-      font-weight: 800; 
-      color: #FFD700; 
-      margin-bottom: 30px;
-      text-shadow: 0 0 20px #FFD700;
-      letter-spacing: 0.1em;
+
+    .trophy {
+      font-size: 64px;
+      margin-bottom: 16px;
+      text-shadow: 0 0 22px rgba(227,125,247,0.6);
     }
-    .leaderboard {
-      background: rgba(255,255,255,0.1);
-      border-radius: 16px;
-      padding: 24px;
-      margin: 30px 0;
-      border: 2px solid rgba(255,215,0,0.3);
-    }
-    .leaderboard h2 {
-      color: #00FF88;
+
+    .room-title {
       font-size: 24px;
-      margin-bottom: 20px;
-      text-shadow: 0 0 15px #00FF88;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      background: linear-gradient(45deg, #E37DF7, #9B6AF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(227,125,247,0.5);
     }
-    .back-btn {
-      margin-top: 30px;
-      padding: 16px 40px;
+
+    .leaderboard {
+      background: rgba(0,0,0,0.3);
+      border-radius: 20px;
+      padding: 20px 22px;
+      margin: 24px 0 8px;
+      border: 1px solid rgba(155,106,246,0.5);
+    }
+
+    .leaderboard h2 {
+      color: #E6E6FF;
       font-size: 18px;
-      font-weight: 700;
-      background: linear-gradient(45deg, #00FF88, #00D47F);
+      margin-bottom: 14px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+    .back-btn {
+      margin-top: 24px;
+      padding: 16px 36px;
+      font-size: 16px;
+      font-weight: 800;
+      background: linear-gradient(45deg, #00FF88, #00D06A);
       border: none;
-      border-radius: 50px;
+      border-radius: 20px;
       color: #000;
       cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
       box-shadow: 0 8px 25px rgba(0,255,136,0.4);
       transition: all 0.3s ease;
     }
+
     .back-btn:hover {
-      transform: translateY(-3px);
+      transform: translateY(-2px);
       box-shadow: 0 12px 35px rgba(0,255,136,0.6);
+    }
+
+    @media (max-width: 480px) {
+      .results-container {
+        padding: 32px 32px;
+      }
+      .room-title { font-size: 20px; }
+      .back-btn { padding: 14px 28px; font-size: 15px; }
     }
   </style>
 </head>
@@ -78,7 +108,7 @@
     
     <div class="leaderboard" id="leaderboard">
       <h2>FINAL RESULTS</h2>
-      <div>Loading...</div>
+      <div style="text-align:center; opacity:0.8;">Loading...</div>
     </div>
     
     <button class="back-btn" onclick="window.location.href='index.html'">
@@ -86,37 +116,80 @@
     </button>
   </div>
 
-  <!-- 🔥 УДАЛИЛ Supabase script - больше не нужен -->
-  
   <script>
-    // 🔥 STATIC VERSION (работает ВСЕГДА)
-    function initWhenReady() {
+    async function initWhenReady() {
       const roomTitle = document.getElementById('roomTitle');
-      const leaderboard = document.getElementById('leaderboard');
+      const leaderboardEl = document.getElementById('leaderboard');
       
-      if (!roomTitle || !leaderboard) {
+      if (!roomTitle || !leaderboardEl) {
         setTimeout(initWhenReady, 50);
         return;
       }
 
       const urlParams = new URLSearchParams(window.location.search);
-      const roomCode = urlParams.get('room') || 'UNKNOWN';
+      const roomCodeRaw = urlParams.get('room') || 'UNKNOWN';
+      const roomCode = roomCodeRaw.toUpperCase();
 
-      roomTitle.textContent = `Tournament ${roomCode.toUpperCase()} - FINAL RESULTS`;
-      
-      leaderboard.innerHTML = `
-        <h2>🏆 CHAMPIONS 🏆</h2>
-        <div style="color: #FF6B6B; padding: 20px; font-size: 16px;">
-          <div>⚠️ Результаты будут доступны скоро!</div>
-          <div style="margin-top: 10px;">Спасибо за игру в Cat-tris! 😻</div>
-          <br>
-          <a href="index.html" style="color: #00FF88; font-weight: bold; font-size: 18px;">
-            🎮 НОВЫЙ ТУРНИР
-          </a>
-        </div>
-      `;
+      roomTitle.textContent = `Tournament ${roomCode} – Final Results`;
 
-      console.log('✅ tournament-end.html полностью готов!');
+      try {
+        const res = await fetch('/api/tournament', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: roomCodeRaw,
+            action: 'state'
+          })
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          leaderboardEl.innerHTML = `
+            <h2>FINAL RESULTS</h2>
+            <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
+              ⚠️ ${data.error || 'Tournament data not found.'}<br><br>
+              <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
+                🎮 NEW TOURNAMENT
+              </a>
+            </div>
+          `;
+          return;
+        }
+
+        const rows = (data.leaderboard || []).map((p, idx) => `
+          <div style="
+              display:flex;
+              justify-content:space-between;
+              align-items:center;
+              padding:6px 0;
+              border-bottom:${idx === (data.leaderboard.length - 1)
+                ? 'none' : '1px solid rgba(255,255,255,0.12)'};
+          ">
+            <span>🏅 #${p.rank} ${p.name}</span>
+            <span>${p.score}</span>
+          </div>
+        `).join('') || `
+          <div style="color:#FF6B6B;padding:12px 0;text-align:center;opacity:0.9;">
+            No scores submitted.
+          </div>
+        `;
+
+        leaderboardEl.innerHTML = `
+          <h2>FINAL RESULTS</h2>
+          ${rows}
+        `;
+      } catch (e) {
+        console.error(e);
+        leaderboardEl.innerHTML = `
+          <h2>FINAL RESULTS</h2>
+          <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
+            ⚠️ Error loading results.<br><br>
+            <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
+              🎮 NEW TOURNAMENT
+            </a>
+          </div>
+        `;
+      }
     }
 
     if (document.readyState === 'loading') {
