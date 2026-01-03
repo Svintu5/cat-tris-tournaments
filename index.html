@@ -153,7 +153,6 @@
       button { padding: 16px 4px; font-size: 15px; }
     }
 
-    /* промо-бейдж под корпусом, справа */
     .promo {
       width: 380px;
       margin-top: 8px;
@@ -178,7 +177,6 @@
     .promo-text {
       font-weight: 600;
     }
-    
   </style>
 </head>
 <body>
@@ -191,7 +189,7 @@
     </div>
 
     <div class="input-group">
-      <input id="roomCode" class="room-input" placeholder="ABC123" maxlength="6">
+      <input id="roomCode" class="room-input" placeholder="ABCD" maxlength="4">
     </div>
 
     <div class="buttons">
@@ -201,62 +199,106 @@
   </div>
 
   <div class="promo">
-  <span class="promo-text">Made for</span>
-  <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
-</div>
+    <span class="promo-text">Made for</span>
+    <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
+  </div>
 
 <script>
-// Vercel Blob API
-async function apiCall(code, action, data = {}) {
-  const res = await fetch('/api/tournament', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ code, action, ...data })
-  });
-  return res.json();
-}
+  const BLOB_BASE =
+    'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
-document.getElementById('createBtn').onclick = async () => {
-  const name = document.getElementById('playerName').value.trim() || 'Host';
-  if (!name) return alert('👤 Enter your nickname!');
-  
-  const code = Math.random().toString(36).slice(2, 6).toUpperCase();
-  
-  try {
-    await apiCall(code, 'create', {
-      host: name,
-      name: `${name}'s Cat Battle`,
-      status: 'waiting',
-      players: [name]
+  async function fetchRoom(roomCode) {
+    const roomUrl = `${BLOB_BASE}/${roomCode}.json?download=1`;
+    const res = await fetch(roomUrl);
+    if (!res.ok) return null;
+    return await res.json();
+  }
+
+  async function saveRoom(room) {
+    await fetch('/api/tournament', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: room.code,
+        action: 'save_room',
+        room
+      })
     });
-    
-    alert(`✅ Room ${code} created! Share the code!`);
-    window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=host`;
-  } catch(err) {
-    alert('❌ Error: ' + err.message);
   }
-};
 
-document.getElementById('joinBtn').onclick = async () => {
-  const name = document.getElementById('playerName').value.trim() || 'Player';
-  const code = document.getElementById('roomCode').value.trim().toUpperCase();
-  
-  if (!name) return alert('👤 Enter your nickname!');
-  if (!code || code.length !== 4) return alert('📝 Enter 4-char room code!');
-  
-  try {
-    const roomData = await apiCall(code, 'join', {playerName: name});
-    
-    if (!roomData.room) return alert('❌ Room not found!');
-    if (roomData.room.status === 'started') return alert('🏁 Tournament already started!');
-    
-    alert(`✅ Joined ${roomData.room.name}!`);
-    window.location.href = `game.html?room=${code}&name=${encodeURIComponent(name)}&role=player`;
-  } catch(err) {
-    alert('❌ Error: ' + err.message);
+  function generateRoomCode() {
+    return Math.random().toString(36).slice(2, 6).toUpperCase();
   }
-};
+
+  document.getElementById('createBtn').onclick = async () => {
+    const nameInput = document.getElementById('playerName');
+    const hostName = (nameInput.value || 'Host').trim();
+    if (!hostName) return alert('👤 Enter your nickname!');
+
+    const roomCode = generateRoomCode();
+
+    const room = {
+      code: roomCode,
+      host: hostName,
+      name: `${hostName || 'Host'}'s Cat Battle`,
+      status: 'waiting',
+      players: [hostName],
+      scores: { [hostName]: 0 },
+      played: { [hostName]: false }
+    };
+
+    try {
+      await saveRoom(room);
+      alert(`✅ Room ${roomCode} created! Share the code!`);
+      window.location.href =
+        `game.html?room=${roomCode}&name=${encodeURIComponent(hostName)}&role=host`;
+    } catch (err) {
+      console.error(err);
+      alert('❌ Error creating room');
+    }
+  };
+
+  document.getElementById('joinBtn').onclick = async () => {
+    const nameInput = document.getElementById('playerName');
+    const playerName = (nameInput.value || 'Player').trim();
+    const roomInput = document.getElementById('roomCode');
+    const roomCode = roomInput.value.trim().toUpperCase();
+
+    if (!playerName) return alert('👤 Enter your nickname!');
+    if (!roomCode || roomCode.length !== 4) {
+      return alert('📝 Enter 4-char room code!');
+    }
+
+    try {
+      const room = await fetchRoom(roomCode);
+      if (!room) {
+        alert('❌ Room not found!');
+        return;
+      }
+
+      if (room.status === 'started') {
+        alert('🏁 Tournament already started!');
+        return;
+      }
+
+      if (!room.players.includes(playerName)) {
+        room.players.push(playerName);
+        room.scores = room.scores || {};
+        room.played = room.played || {};
+        room.scores[playerName] = room.scores[playerName] || 0;
+        room.played[playerName] = false;
+        await saveRoom(room);
+      }
+
+      alert(`✅ Joined ${room.name}!`);
+      window.location.href =
+        `game.html?room=${roomCode}&name=${encodeURIComponent(playerName)}&role=player`;
+    } catch (err) {
+      console.error(err);
+      alert('❌ Error joining room');
+    }
+  };
 </script>
 
 </body>
-</html>
+</
