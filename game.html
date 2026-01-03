@@ -422,16 +422,14 @@ const playerRole = urlParams.get('role') || 'player';
 const BLOB_BASE =
   'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
+const API_BASE = `${location.origin}/api/tournament`;
+
 async function fetchRoom(roomCode) {
-  const res = await fetch(`${location.origin}/api/tournament`, {
+  const res = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      code: roomCode,
-      action: 'get_room'
-    })
+    body: JSON.stringify({ code: roomCode, action: 'get_room' }),
   });
-
   if (!res.ok) {
     console.error('fetchRoom error', res.status);
     return null;
@@ -440,14 +438,10 @@ async function fetchRoom(roomCode) {
 }
 
 async function saveRoom(room) {
-  await fetch(`${location.origin}/api/tournament`, {
+  await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      code: room.code,
-      action: 'save_room',
-      room
-    })
+    body: JSON.stringify({ code: room.code, action: 'save_room', room }),
   });
 }
   
