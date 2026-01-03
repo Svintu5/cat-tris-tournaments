@@ -117,33 +117,30 @@
   </div>
 
   <script>
-  async function loadState() {
-    const roomTitle = document.getElementById('roomTitle');
-    const leaderboardEl = document.getElementById('leaderboard');
-    if (!roomTitle || !leaderboardEl) return;
+    const BLOB_BASE =
+      'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomCodeRaw = urlParams.get('room') || 'UNKNOWN';
-    const roomCode = roomCodeRaw.toUpperCase();
+    async function fetchRoom(roomCode) {
+      const roomUrl = `${BLOB_BASE}/${roomCode}.json?download=1`;
+      const res = await fetch(roomUrl);
+      if (!res.ok) return null;
+      return await res.json();
+    }
 
-    roomTitle.textContent = `Tournament ${roomCode} – Final Results`;
+    async function loadState() {
+      const roomTitle = document.getElementById('roomTitle');
+      const leaderboardEl = document.getElementById('leaderboard');
+      if (!roomTitle || !leaderboardEl) return;
 
-    try {
-      const res = await fetch('/api/tournament', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          code: roomCodeRaw,
-          action: 'state'
-        })
-      });
-      const data = await res.json();
+      const urlParams = new URLSearchParams(window.location.search);
+      const roomCodeRaw = urlParams.get('room') || 'UNKNOWN';
 
-      if (!res.ok || data.error) {
+      const room = await fetchRoom(roomCodeRaw);
+      if (!room) {
         leaderboardEl.innerHTML = `
           <h2>FINAL RESULTS</h2>
           <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
-            ⚠️ ${data.error || 'Tournament data not found.'}<br><br>
+            ⚠️ Tournament data not found.<br><br>
             <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
               🎮 NEW TOURNAMENT
             </a>
@@ -152,13 +149,24 @@
         return;
       }
 
-      const rows = (data.leaderboard || []).map((p, idx) => `
+      const roomCode = room.code.toUpperCase();
+      roomTitle.textContent = \`Tournament \${roomCode} – Final Results\`;
+
+      const leaderboardArr = Object.entries(room.scores || {})
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, sc], index) => ({
+          rank: index + 1,
+          name,
+          score: sc
+        }));
+
+      const rows = leaderboardArr.map((p, idx) => `
         <div style="
             display:flex;
             justify-content:space-between;
             align-items:center;
             padding:6px 0;
-            border-bottom:${idx === (data.leaderboard.length - 1)
+            border-bottom:${idx === (leaderboardArr.length - 1)
               ? 'none' : '1px solid rgba(255,255,255,0.12)'};
         ">
           <span>🏅 #${p.rank} ${p.name}</span>
@@ -174,30 +182,17 @@
         <h2>FINAL RESULTS</h2>
         ${rows}
       `;
-    } catch (e) {
-      console.error(e);
-      leaderboardEl.innerHTML = `
-        <h2>FINAL RESULTS</h2>
-        <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
-          ⚠️ Error loading results.<br><br>
-          <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
-            🎮 NEW TOURNAMENT
-          </a>
-        </div>
-      `;
     }
-  }
 
-  // первый вызов сразу после загрузки
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        loadState();
+        setInterval(loadState, 3000);
+      });
+    } else {
       loadState();
-      setInterval(loadState, 3000); // поллинг каждые 3 секунды
-    });
-  } else {
-    loadState();
-    setInterval(loadState, 3000);
-  }
-</script>
+      setInterval(loadState, 3000);
+    }
+  </script>
 </body>
 </html>
