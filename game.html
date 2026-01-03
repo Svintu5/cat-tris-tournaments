@@ -419,6 +419,9 @@ const roomCode = urlParams.get('room');
 const playerName = decodeURIComponent(urlParams.get('name') || 'Player');
 const playerRole = urlParams.get('role') || 'player';
 
+// 🔹 статус турнира по умолчанию
+let tournamentStatus = 'waiting';
+
 // Без roomCode — редирект в лобби
 if (!roomCode) {
   document.querySelector('.tournament-info').style.display = 'block';
@@ -480,7 +483,7 @@ if (playerRole === 'host') {
   };
 }
 
-// Общий поллинг состояния турнира для всех игроков
+// 🔁 Общий поллинг состояния турнира для всех игроков
 setInterval(async () => {
   try {
     const res = await fetch('/api/tournament', {
@@ -495,7 +498,14 @@ setInterval(async () => {
     const data = await res.json();
     if (!res.ok || data.error) return;
 
-    // обновляем лидерборд
+    tournamentStatus = data.room.status;
+
+    if (data.room.status === 'waiting') {
+      document.getElementById('status').textContent = '⏳ Waiting for host...';
+    } else if (data.room.status === 'started') {
+      document.getElementById('status').textContent = '🎮 Tournament started! Press Start';
+    }
+
     document.getElementById('leaderboard').innerHTML =
       data.leaderboard.map(p =>
         `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
@@ -503,7 +513,6 @@ setInterval(async () => {
          </div>`
       ).join('');
 
-    // если турнир завершён — всех уводим на финальный экран
     if (data.room.status === 'finished') {
       document.getElementById('status').textContent = '🏁 Турнир завершён!';
       setTimeout(() => {
@@ -514,8 +523,7 @@ setInterval(async () => {
   } catch (e) {
     console.error('state poll error', e);
   }
-}, 3000); // каждые 3 секунды
-
+}, 3000);
   
 // Отправка очков в Blob
 window.sendScore = async (finalScore) => {
@@ -809,22 +817,29 @@ if (dropCounter > currentInterval) playerDrop();
     }
 
     function handleAction(action) {
-      if (action === 'start') {
-        gameOver = false;
-        gameStarted = true;
-        startOverlay.style.display = 'none';
-        startOverlay.textContent = 'Press Enter to start';
-        arena.forEach(row => row.fill(0));
-        player.score = 0;
-        dropInterval = 800;
-        playerReset();
-        lastTime = 0;
-        updateScore();
-        return;
-      }
+  if (action === 'start') {
+    // 🛑 не даём стартовать до начала турнира
+    if (tournamentStatus !== 'started') {
+      startOverlay.textContent = 'Waiting for host to start';
+      startOverlay.style.display = 'block';
+      return;
+    }
 
-      if (!gameStarted) return;
+    gameOver = false;
+    gameStarted = true;
+    startOverlay.style.display = 'none';
+    startOverlay.textContent = 'Press Enter to start';
+    arena.forEach(row => row.fill(0));
+    player.score = 0;
+    dropInterval = 800;
+    playerReset();
+    lastTime = 0;
+    updateScore();
+    return;
+  }
 
+  if (!gameStarted) return;
+      
       if (action === 'left') playerMove(-1);
       if (action === 'right') playerMove(1);
       if (action === 'down') playerDrop();
