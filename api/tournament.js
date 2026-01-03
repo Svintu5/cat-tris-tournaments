@@ -1,7 +1,6 @@
 // api/tournament.js
 
-// Простое in-memory хранилище комнат
-const rooms = {}; // { [code]: { code, host, name, status, players: string[], scores: { [playerName]: number } } }
+const rooms = {};
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -24,7 +23,7 @@ export default async function handler(req, res) {
       code,
       host,
       name: roomName || `${host}'s Cat Battle`,
-      status: 'waiting', // waiting | started | finished
+      status: 'waiting',
       players: [host],
       scores: { [host]: 0 }
     };
@@ -53,6 +52,17 @@ export default async function handler(req, res) {
     return res.json({ room });
   }
 
+  // START TOURNAMENT
+  if (action === 'start') {
+    const room = rooms[code];
+    if (!room) {
+      return res.status(400).json({ error: 'Room not found' });
+    }
+
+    room.status = 'started';
+    return res.json({ room });
+  }
+
   // SUBMIT SCORE
   if (action === 'submit_score') {
     const room = rooms[code];
@@ -63,12 +73,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing playerName' });
     }
 
-    // обновляем лучший результат игрока в этой комнате
     const prev = room.scores[playerName] || 0;
     const best = Math.max(prev, Number(score) || 0);
     room.scores[playerName] = best;
 
-    // строим лидерборд
     const leaderboard = Object.entries(room.scores)
       .sort((a, b) => b[1] - a[1])
       .map(([name, sc], index) => ({
@@ -90,10 +98,3 @@ export default async function handler(req, res) {
 
   return res.status(400).json({ error: 'Unknown action' });
 }
-  if (action === 'start') {
-    const room = rooms[code];
-    if (!room) return res.status(400).json({ error: 'Room not found' });
-
-    room.status = 'started';
-    return res.json({ room });
-  }
