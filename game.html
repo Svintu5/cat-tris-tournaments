@@ -587,13 +587,10 @@
         player.pos.y = 0;
         player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
         if (collide(arena, player)) {
-          arena.forEach(row => row.fill(0));
-          player.score = 0;
-          dropInterval = 800;
-          gameStarted = false;
-          gameOver = true;
-          startOverlay.textContent = 'Game Over Press Enter';
-          startOverlay.style.display = 'block';
+        arena.forEach(row => row.fill(0));
+        player.score = 0;
+        dropInterval = 800;
+        gameStarted = false;
         }
         window.tetris.gameStarted = gameStarted;
         window.tetris.playerReset = playerReset;
@@ -719,75 +716,74 @@
       }
     }, 2000);
 
-    // 🔥 LIVE МУЛЬТИПЛЕЕР (добавь после initTetris)
-  async function initMultiplayer() {
+async function initMultiplayer() {
   const roomCode = new URLSearchParams(window.location.search).get('room');
   const playerName = decodeURIComponent(new URLSearchParams(window.location.search).get('name') || 'Player');
   
   window.tournamentRoom = roomCode;
   window.tournamentPlayer = playerName;
   
-  // LIVE ЛИДЕРБОРД
-  const channel = window.supabaseClient
-    .channel(`tournament:${roomCode}`)
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'tournament_scores',
-      filter: `room_code=eq.${roomCode}`
-    }, (payload) => {
-      updateLiveLeaderboard();
-    })
-    .subscribe();
-
-  // Синхронизация очков каждые 2 сек
+  // ✅ ФИКС 409: правильный upsert каждые 3 сек
   setInterval(async () => {
-    if (window.tetris?.player?.score) {
-      await window.supabaseClient.from('tournament_scores').upsert({
-        room_code: roomCode,
-        player_name: playerName,
-        score: window.tetris.player.score
-      });
+    if (window.tetris?.player?.score !== undefined) {
+      await window.supabaseClient
+        .from('tournament_scores')
+        .upsert({ 
+          room_code: roomCode, 
+          player_name: playerName, 
+          score: window.tetris.player.score 
+        }, { 
+          onConflict: 'room_code,player_name' 
+        });
     }
-  }, 2000);
+  }, 3000);
   
+  // Обновляем лидерборд каждые 2 сек
+  setInterval(updateLiveLeaderboard, 2000);
   updateLiveLeaderboard();
 }
 
 async function updateLiveLeaderboard() {
-  const roomCode = new URLSearchParams(window.location.search).get('room');
+  const roomCode = window.tournamentRoom;
+  if (!roomCode || !window.supabaseClient) return;
   
-  // 🔥 ПРИНУДИТЕЛЬНО добавляем себя если нас нет
-  await window.supabaseClient.from('tournament_scores').upsert({
-    room_code: roomCode,
-    player_name: playerName,
-    score: window.tetris?.player?.score || 0
-  });
-  
-  const { data: scores } = await window.supabaseClient
-    .from('tournament_scores')
-    .select('*')
-    .eq('room_code', roomCode)
-    .order('score', { ascending: false });
-  
-  const leaderboard = document.getElementById('liveLeaderboard');
-  if (scores?.length) {
-    leaderboard.innerHTML = `
-      <div style="font-weight: 800; color: #FFD700; margin-bottom: 8px;">🏆 LIVE (${scores.length})</div>
-      ${scores.map((s, i) => `
-        <div style="padding: 4px 0; ${i === 0 ? 'color: #FFD700; font-weight: bold;' : ''}">
-          ${s.player_name.padEnd(10)} <span style="float: right; color: #00FF88;">${s.score}</span>
+  try {
+    const { data: scores } = await window.supabaseClient
+      .from('tournament_scores')
+      .select('*')
+      .eq('room_code', roomCode)
+      .order('score', { ascending: false });
+    
+    const leaderboard = document.getElementById('liveLeaderboard');
+    if (scores?.length > 0) {
+      leaderboard.innerHTML = `
+        <div style="font-weight: 800; color: #FFD700; margin-bottom: 8px;">
+          🏆 LIVE (${scores.length})
         </div>
-      `).join('')}
-    `;
+        ${scores.map((s, i) => `
+          <div style="padding: 4px 0; ${i === 0 ? 'color: #FFD700; font-weight: bold;' : ''}">
+            ${s.player_name.padEnd(10)} 
+            <span style="float: right; color: #00FF88;">${s.score}</span>
+          </div>
+        `).join('')}
+      `;
+    } else {
+      leaderboard.innerHTML = '<div style="color: #888;">No players yet...</div>';
+    }
+  } catch (error) {
+    console.log('Leaderboard error:', error);
   }
 }
 
-// ЗАПУСК после Supabase
-initSupabase().then(() => {
-  setTimeout(initMultiplayer, 1000);
-});
+    // 🔥 ЗАПУСК
+    initSupabase();
 
+    // 🔥 ЗАПУСК МУЛЬТИПЛЕЕРА после Tetris
+    setTimeout(() => {
+      if (window.supabaseClient && window.tetris) {
+        initMultiplayer();
+      }
+    }, 3000);
   </script>
 </body>
 </html>
