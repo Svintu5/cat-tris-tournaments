@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <title>😻 Cat-tris Tournament Game</title>
   <meta charset="UTF-8">
   <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
@@ -414,181 +413,74 @@
   </div>
 
 <script>
-  // 🔥 ГЛОБАЛЬНЫЕ КОНСТАНТЫ
-  const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
+// 🔥 VERCEL BLOB ТУРНИР (без Supabase)
+const urlParams = new URLSearchParams(window.location.search);
+const roomCode = urlParams.get('room');
+const playerName = decodeURIComponent(urlParams.get('name') || 'Player');
+const playerRole = urlParams.get('role') || 'player';
 
-  // 🔥 ПАРАМЕТРЫ URL (ТОЛЬКО 1 РАЗ!)
-  const urlParams = new URLSearchParams(window.location.search);
-  const roomCode = urlParams.get('room');
-  const playerName = decodeURIComponent(urlParams.get('name') || 'Player');
-  const playerRole = urlParams.get('role') || 'player';
-
-  let supabaseClient = null;
-  let scoreInterval = null;
-  let leaderboardInterval = null;
-
-  // ПРОВЕРКА roomCode
-  if (!roomCode) {
-    const tourneyInfo = document.querySelector('.tournament-info');
-    if (tourneyInfo) {
-      tourneyInfo.style.display = 'block';
-      tourneyInfo.innerHTML = '❌ <a href="index.html" style="color: #FF6B6B;">Go to lobby →</a>';
-    }
-    throw new Error('No room code provided');
-  }
-
-  // 🔥 SUPABASE
-  async function initSupabase() {
-  if (typeof supabase === 'undefined') {
-    setTimeout(initSupabase, 100);
-    return;
-  }
-  
-  if (supabaseClient) return supabaseClient;
-  
-  const { createClient } = supabase;
-  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window.supabaseClient = supabaseClient;
-
-  // 🔥 ПОКАЗЫВАЕМ КОМНАТУ + СТАТУС
-  const tourneyInfo = document.querySelector('.tournament-info');
-  if (tourneyInfo) {
-    tourneyInfo.style.display = 'block';
-    tourneyInfo.innerHTML = `
-      ROOM: <span style="color: #FFD700;">${roomCode.toUpperCase()}</span> | 
-      <span style="color: #00FF88;">${playerName}</span> (${playerRole.toUpperCase()})
-    `;
-  }
-
-  // 🔥 КНОПКА СТАРТ ТУРНИРА (ТОЛЬКО ДЛЯ ХОСТА)
-  if (playerRole === 'host') {
-    const startBtn = document.getElementById('startTournamentBtn');
-    startBtn.style.display = 'block';
-
-    startBtn.onclick = async () => {
-      if (confirm('🚀 НАЧАТЬ ТУРНИР?\n\nПосле этого никто не сможет присоединиться!')) {
-        try {
-          const { error } = await supabaseClient
-            .from('tournament_rooms')
-            .update({ status: 'started' })
-            .eq('code', roomCode);
-          
-          if (!error) {
-            alert('✅ Турнир начался! 🎮');
-            startBtn.remove();
-          } else {
-            alert('❌ Ошибка запуска: ' + error.message);
-          }
-        } catch (err) {
-          alert('❌ Ошибка: ' + err.message);
-        }
-      }
-    };
-  }
-
-  // 🔥 РЕАЛТАЙМ ПОДПИСКА НА ИЗМЕНЕНИЯ СТАТУСА
-  supabaseClient
-    .channel(`room:${roomCode}`)
-    .on(
-      'postgres_changes',
-      { 
-        event: 'UPDATE', 
-        schema: 'public', 
-        table: 'tournament_rooms', 
-        filter: `code=eq.${roomCode}` 
-      },
-      (payload) => {
-        if (payload.new.status === 'started') {
-          const ti = document.querySelector('.tournament-info');
-          if (ti) {
-            ti.innerHTML += ' | 🏁 <span style="color:#FFD700">STARTED!</span>';
-            ti.classList.add('tournament-started');
-          }
-
-          // 🔥 АВТОЗАПУСК ИГРЫ ДЛЯ ВСЕХ
-          const overlay = document.getElementById('startOverlay');
-          if (overlay) overlay.style.display = 'none';
-          
-          if (window.tetris && !window.tetris.gameStarted) {
-            window.tetris.gameStarted = true;
-          }
-        }
-      }
-    )
-    .subscribe();
-
-  if (playerRole === 'host') createLiveLeaderboard();
-  initTetris();
-  startScoreSync();
+// ❌ БЕЗ roomCode — редирект в лобби
+if (!roomCode) {
+  document.querySelector('.tournament-info').style.display = 'block';
+  document.querySelector('.tournament-info').innerHTML = 
+    '❌ <a href="lobby.html" style="color: #FF6B6B;">Go to lobby →</a>';
+  throw new Error('No room code');
 }
 
-  // 🔥 ЛИДЕРБОРД (ХОСТ)
-  function createLiveLeaderboard() {
-    const screen = document.querySelector('.screen');
-    const lb = document.createElement('div');
-    lb.id = 'liveLeaderboard';
-    lb.style.cssText = `
-      position: absolute; top: 80px; right: -220px; width: 200px; height: 280px;
-      background: rgba(0,0,0,0.92); border: 2px solid #FFD700; border-radius: 16px;
-      padding: 16px; font-size: 14px; color: #fff; backdrop-filter: blur(12px);
-      box-shadow: 0 8px 32px rgba(255,215,0,0.3); overflow-y: auto;
-    `;
-    lb.innerHTML = '<div style="color: #888;">Loading...</div>';
-    screen.style.position = 'relative';
-    screen.appendChild(lb);
+// 🔥 ТУРНИРНЫЙ UI СПРАВА
+const tourUI = document.createElement('div');
+tourUI.id = 'tourUI';
+tourUI.style.cssText = `
+  position:fixed;top:20px;right:20px;z-index:999;background:rgba(15,0,35,.95);
+  border:2px solid #9B6AF6;border-radius:16px;padding:20px;min-width:240px;
+  color:white;font-family:Switzer,sans-serif;backdrop-filter:blur(20px);
+  box-shadow:0 0 30px rgba(155,106,246,.4);
+`;
+tourUI.innerHTML = `
+  <h3 style="color:#E37DF7;margin:0 0 12px;font-size:18px">🏆 ${roomCode}</h3>
+  <div style="margin-bottom:12px;font-size:14px">👤 ${playerName}</div>
+  <div id="status" style="margin-bottom:16px;font-size:14px">Играйте!</div>
+  <div id="leaderboard" style="max-height:200px;overflow:auto;font-size:13px"></div>
+`;
+document.body.appendChild(tourUI);
 
-    const updateLB = async () => {
-      if (!supabaseClient) return;
-      try {
-        const { data: scores } = await supabaseClient
-          .from('tournament_scores')
-          .select('*').eq('room_code', roomCode)
-          .order('score', { ascending: false });
+// 🔥 СТАТУС КОМНАТЫ СВЕРХУ
+document.querySelector('.tournament-info').style.display = 'block';
+document.querySelector('.tournament-info').innerHTML = 
+  `ROOM: <span style="color:#FFD700;">${roomCode}</span> | ${playerName} (${playerRole})`;
 
-        const leaderboard = document.getElementById('liveLeaderboard');
-        if (!leaderboard || !scores) return;
-
-        if (scores.length > 0) {
-          leaderboard.innerHTML = `
-            <div style="font-weight: 800; color: #FFD700; margin-bottom: 12px; font-size: 16px;">
-              🏆 LIVE (${scores.length})
-            </div>
-            ${scores.slice(0, 8).map((s, i) => `
-              <div style="padding: 6px 0; display: flex; justify-content: space-between; 
-                ${i === 0 ? 'color: #FFD700; font-weight: bold;' : ''}">
-                <span>${i+1}. ${s.player_name}</span>
-                <span style="color: #00FF88;">${s.score}</span>
-              </div>
-            `).join('')}
-          `;
-        }
-      } catch (e) { console.log('LB error:', e); }
-    };
-
-    leaderboardInterval = setInterval(updateLB, 2000);
-    setTimeout(updateLB, 1000);
-  }
-
-  // 🔥 СИНХРОНИЗАЦИЯ ОЧКОВ
-function startScoreSync() {
-  if (scoreInterval) clearInterval(scoreInterval);
-  scoreInterval = setInterval(async () => {
-    if (window.tetris?.player?.score !== undefined && supabaseClient) {
-      try {
-        await supabaseClient.from('tournament_scores').upsert({
-          room_code: roomCode, 
-          player_name: playerName, 
-          score: window.tetris.player.score,
-          lines: window.tetris.player.lines || 0,      // ← ДОБАВИТЬ!
-          completed_games: window.tetris.player.games || 0  // ← ДОБАВИТЬ!
-        }, { onConflict: 'room_code,player_name' });
-      } catch (e) { 
-        console.log('Score sync error:', e); 
-      }
+// 🔥 КНОПКА START ТУРНИРА (только хост)
+if (playerRole === 'host') {
+  document.getElementById('startTournamentBtn').style.display = 'block';
+  document.getElementById('startTournamentBtn').onclick = () => {
+    if (confirm('🚀 НАЧАТЬ ТУРНИР?')) {
+      document.getElementById('status').textContent = '🏁 Турнир начат!';
+      document.getElementById('startTournamentBtn').classList.add('tournament-started');
     }
-  }, 2000); // ЧАЩЕ!
+  };
 }
+
+// 🔥 ОТПРАВКА ОЧКОВ В BLOB
+window.sendScore = async(finalScore) => {
+  const res = await fetch('/api/tournament', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      code: roomCode, action: 'submit_score', 
+      playerName, score: finalScore
+    })
+  });
+  const {leaderboard} = await res.json();
+  
+  document.getElementById('leaderboard').innerHTML = 
+    leaderboard.map(p => 
+      `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
+        🏅 #${p.rank} ${p.name}: ${p.score}
+      </div>`
+    ).join('');
+  
+  document.getElementById('status').textContent = '🏁 Турнир завершён!';
+};
 
   // 🔥 ТЕТРИС (ПОЛНЫЙ КОД)
   function initTetris() {
@@ -686,14 +578,6 @@ function startScoreSync() {
     dropInterval = Math.max(MIN_DROP_INTERVAL, dropInterval * SPEED_STEP);
   }
   
-  // ✅ НОВАЯ ИГРА (game over)
-  if (collide(arena, player)) {
-    player.games += 1;  // ← СЧИТАЕМ ЗАВЕРШЁННЫЕ ИГРЫ!
-  }
-  
-  updateScore();
-}
-
     function playerDrop() {
       player.pos.y++; if (collide(arena, player)) {
         player.pos.y--; merge(arena, player); playerReset(); arenaSweep(); updateScore();
@@ -777,112 +661,6 @@ function startScoreSync() {
     window.tetris.gameStarted = gameStarted; playerReset(); updateScore(); update();
   }
 
-  // 🔥 ПРОВЕРКА ТЕКУЩЕГО СТАТУСА ТУРНИРА при загрузке
-async function checkTournamentStatus() {
-  if (!roomCode || !supabaseClient) return;
-  
-  try {
-    const { data: room } = await supabaseClient
-      .from('tournament_rooms')
-      .select('status')
-      .eq('code', roomCode)
-      .single();
-    
-    if (room?.status === 'started') {
-      const ti = document.querySelector('.tournament-info');
-      if (ti) ti.innerHTML += ' | 🏁 <span style="color:#FFD700">STARTED!</span>';
-      const overlay = document.getElementById('startOverlay');
-      if (overlay) overlay.style.display = 'none';
-    }
-  } catch (e) {
-    console.log('Status check error:', e);
-  }
-}
-
-// 🔥 АВТОЗАВЕРШЕНИЕ ТУРНИРА (УПРОЩЁННАЯ ВЕРСИЯ)
-let tournamentFinishCheck = null;
-
-async function checkTournamentFinish() {
-  console.log('🔍 Проверка завершения по циклам игры...');
-  
-  try {
-    // 1️⃣ Все игроки комнаты
-    const { data: playersResult } = await supabaseClient
-      .from('tournament_players')
-      .select('player_name')
-      .eq('room_code', roomCode);
-    
-    if (!playersResult || playersResult.length === 0) {
-      console.log('❌ Нет игроков');
-      return;
-    }
-    
-    console.log(`👥 Игроков: ${playersResult.length}`);
-    
-    // 2️⃣ СТАТИСТИКА КАЖДОГО ИГРОКА (линии, игры, очки)
-    const { data: gameStats } = await supabaseClient
-      .from('tournament_scores')
-      .select('player_name,score,lines,completed_games')  // ← НОВЫЕ ПОЛЯ!
-      .eq('room_code', roomCode);
-    
-    console.log('🎮 Статистика:', gameStats);
-    
-    // 3️⃣ ✅ ПРОВЕРКА: У ВСЕХ есть ХОТЯ БЫ 1 ЗАВЕРШЁННАЯ ИГРА
-    const allCompletedGames = playersResult.every(player => {
-      const playerStats = gameStats?.find(stats => stats.player_name === player.player_name);
-      
-      // Завершил хотя бы 1 игру (lines > 0 ИЛИ completed_games >= 1)
-      const hasCompletedGame = playerStats && (
-        (playerStats.lines && playerStats.lines > 0) || 
-        (playerStats.completed_games && playerStats.completed_games >= 1)
-      );
-      
-      console.log(`  ${player.player_name}: lines=${playerStats?.lines || 0}, games=${playerStats?.completed_games || 0} → ${hasCompletedGame ? '✅' : '❌'}`);
-      
-      return hasCompletedGame;
-    });
-    
-    console.log(`🎯 Все завершили хотя бы 1 игру: ${allCompletedGames}`);
-    
-    // 4️⃣ ФИНИШ!
-    if (allCompletedGames) {
-      console.log('🏁 Все сыграли 1 цикл → ФИНИШ!');
-      
-      await supabaseClient
-        .from('tournament_rooms')
-        .update({ status: 'finished' })
-        .eq('code', roomCode);
-      
-      alert('🏆 Все завершили первую игру! Показываем результаты.');
-      setTimeout(() => {
-        window.location.href = `tournament-end.html?room=${roomCode}`;
-      }, 1000);
-    }
-    
-  } catch (error) {
-    console.error('💥 Ошибка:', error);
-  }
-}
-
-  // 🔥 ЗАПУСК
-  initSupabase();
-
-    // 🔥 ЗАПУСК ПРОВЕРКИ ТОЛЬКО ПОСЛЕ SUPABASE
-  if (playerRole === 'host') {
-    console.log('👑 Хост: запускаю проверку завершения');
-    if (!tournamentFinishCheck) {
-      tournamentFinishCheck = setInterval(checkTournamentFinish, 2000); // ЧАЩЕ!
-    }
-  }
-  
-  // 🔥 ESC для хоста
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && playerRole === 'host') {
-      if (confirm('🏁 Завершить турнир и показать результаты?')) {
-        window.location.href = `tournament-end.html?room=${roomCode}`;
-      }
-    }
-  });
 </script>
 </body>
 </html>
