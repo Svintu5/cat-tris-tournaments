@@ -120,12 +120,15 @@
     const BLOB_BASE =
       'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
-    async function fetchRoom(roomCode) {
-      const roomUrl = `${BLOB_BASE}/${roomCode}.json?download=1`;
-      const res = await fetch(roomUrl);
-      if (!res.ok) return null;
-      return await res.json();
-    }
+async function fetchRoom(roomCode) {
+  const roomUrl = `${BLOB_BASE}/${roomCode}.json?download=1`;
+  const res = await fetch(roomUrl);
+  if (!res.ok) {
+    // 404 → комнаты ещё нет
+    return null;
+  }
+  return await res.json();
+}
 
     async function loadState() {
       const roomTitle = document.getElementById('roomTitle');
