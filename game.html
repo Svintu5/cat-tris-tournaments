@@ -842,7 +842,7 @@ if (dropCounter > currentInterval) playerDrop();
       document.getElementById('topScore').textContent = topScore;
     }
 
-  function handleAction(action) {
+ function handleAction(action) {
   if (action === 'start') {
     // хост может начать всегда, игроки — только после старта турнира
     if (playerRole !== 'host' && tournamentStatus !== 'started') {
@@ -871,13 +871,20 @@ if (dropCounter > currentInterval) playerDrop();
   if (action === 'down') playerDrop();
   if (action === 'up') playerRotate(1);
 }
-      if (!gameStarted) return;
 
-      if (event.keyCode === 37) handleAction('left');
-      else if (event.keyCode === 39) handleAction('right');
-      else if (event.keyCode === 40) handleAction('down');
-      else if (event.keyCode === 38) handleAction('up');
-    });
+document.addEventListener('keydown', event => {
+  if (event.key === 'Enter') {
+    handleAction('start');
+    return;
+  }
+
+  if (!gameStarted) return;
+
+  if (event.keyCode === 37) handleAction('left');
+  else if (event.keyCode === 39) handleAction('right');
+  else if (event.keyCode === 40) handleAction('down');
+  else if (event.keyCode === 38) handleAction('up');
+});
 
 document.querySelectorAll('[data-action]').forEach(btn => {
   const action = btn.getAttribute('data-action');
@@ -885,7 +892,7 @@ document.querySelectorAll('[data-action]').forEach(btn => {
   const press = e => {
     e.preventDefault();
     if (action === 'down') {
-      fastDrop = true;       // при удержании ▼ ускоряем
+      fastDrop = true;
     } else {
       handleAction(action);
     }
@@ -895,7 +902,7 @@ document.querySelectorAll('[data-action]').forEach(btn => {
   const release = e => {
     e.preventDefault();
     if (action === 'down') {
-      fastDrop = false;      // отпустили ▼ — снова обычная скорость
+      fastDrop = false;
     }
     btn.classList.remove('pressed');
   };
@@ -907,9 +914,9 @@ document.querySelectorAll('[data-action]').forEach(btn => {
   btn.addEventListener('touchend', release);
 });
 
-    playerReset();
-    updateScore();
-    update();
+playerReset();
+updateScore();
+update();
   </script>
 </body>
 </html>
