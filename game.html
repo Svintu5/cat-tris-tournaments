@@ -331,16 +331,6 @@
     Loading tournament...
   </div>
 
-  <!-- LIVE ЛИДЕРБОРД -->
-<div id="liveLeaderboard" style="
-  position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
-  background: rgba(0,0,0,0.9); border: 2px solid #FFD700; border-radius: 16px;
-  padding: 16px 24px; max-height: 200px; overflow: auto; font-size: 14px;
-  backdrop-filter: blur(12px); z-index: 1000; min-width: 200px;">
-  <div style="font-weight: 800; color: #FFD700; margin-bottom: 8px;">🏆 LIVE</div>
-  Loading players...
-</div>
-
   <!-- ОСНОВНОЙ ЭКРАН -->
   <div class="title-main">😻 CAT-TRIS 😻</div>
   <div class="hint-bar">
@@ -406,25 +396,18 @@
     const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
 
-    async function initSupabase() {
-      if (typeof supabase === 'undefined') {
-        setTimeout(initSupabase, 100);
-        return;
-      }
-      
-      const { createClient } = supabase;
-      window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      
-      // 🔥 ПОКАЗЫВАЕМ ТУРНИРНУЮ ИНФОРМАЦИЮ
-      document.getElementById('tournamentInfo').textContent = 
-        `ROOM: ${roomCode.toUpperCase()} | ${playerName} (${playerRole.toUpperCase()})`;
-      
-      window.tournament = {
-        currentRoom: roomCode,
-        playerName: playerName,
-        leaderboard: {},
-        timeLeft: 180
-      };
+  async function initSupabase() {
+  if (typeof supabase === 'undefined') {
+    setTimeout(initSupabase, 100);
+    return;
+  }
+  
+  const { createClient } = supabase;
+  window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  // Показываем комнату
+  document.getElementById('roomDisplay').textContent = roomCode.toUpperCase();
+  document.getElementById('playerDisplay').textContent = `${playerName} (${playerRole.toUpperCase()})`;
       
       // 🔥 ЗАПУСК ТЕТРИСА
       initTetris();
