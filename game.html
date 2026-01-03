@@ -784,6 +784,58 @@ async function checkTournamentStatus() {
     console.log('Status check error:', e);
   }
 }
+
+// 🔥 АВТОЗАВЕРШЕНИЕ ТУРНИРА
+let tournamentFinishCheck = null;
+
+async function checkTournamentFinish() {
+  if (!supabaseClient || !roomCode) return;
+  
+  try {
+    const { data: room } = await supabaseClient
+      .from('tournament_rooms')
+      .select('status')
+      .eq('code', roomCode)
+      .single();
+    
+    if (room?.status === 'finished') {
+      window.location.href = `tournament-end.html?room=${roomCode}`;
+      return;
+    }
+    
+    const { data: players } = await supabaseClient
+      .from('tournament_players')
+      .select('player_name')
+      .eq('room_code', roomCode);
+    
+    const { data: scores } = await supabaseClient
+      .from('tournament_scores')
+      .select('player_name,score')
+      .eq('room_code', roomCode);
+    
+    if (!players || players.length === 0) return;
+    
+    const allPlayed = players.every(p => 
+      scores?.find(s => s.player_name === p.player_name && s.score > 0)
+    );
+    
+    if (allPlayed && scores?.length > 0) {
+      await supabaseClient
+        .from('tournament_rooms')
+        .update({ status: 'finished' })
+        .eq('code', roomCode);
+      
+      setTimeout(() => {
+        window.location.href = `tournament-end.html?room=${roomCode}`;
+      }, 2000);
+    }
+  } catch (e) {
+    console.log('Finish check error:', e);
+  }
+}
+
+// 🔥 ЗАПУСК ПРОВЕРКИ
+tournamentFinishCheck = setInterval(checkTournamentFinish, 4000);
   
   // 🔥 ЗАПУСК
   initSupabase();
