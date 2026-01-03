@@ -481,29 +481,38 @@ if (playerRole === 'host') {
 }
 
 // Отправка очков в Blob
-window.sendScore = async(finalScore) => {
+window.sendScore = async (finalScore) => {
   try {
     const res = await fetch('/api/tournament', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        code: roomCode, 
-        action: 'submit_score', 
-        playerName: playerName, 
+        code: roomCode,
+        action: 'submit_score',
+        playerName,
         score: finalScore
       })
     });
     const data = await res.json();
-    
-    document.getElementById('leaderboard').innerHTML = 
-      data.leaderboard.map(p => 
+
+    if (!res.ok) {
+      alert(data.error || 'Tournament error');
+      return;
+    }
+
+    document.getElementById('leaderboard').innerHTML =
+      data.leaderboard.map(p =>
         `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
-          🏅 #${p.rank} ${p.name}: ${p.score}
-        </div>`
+           🏅 #${p.rank} ${p.name}: ${p.score}
+         </div>`
       ).join('');
-    
-    document.getElementById('status').textContent = '🏁 Турнир завершён!';
-  } catch(e) {
+
+    if (data.room.status === 'finished') {
+      document.getElementById('status').textContent = '🏁 Турнир завершён!';
+    } else {
+      document.getElementById('status').textContent = '✅ Результат сохранён';
+    }
+  } catch (e) {
     console.error('Tournament error:', e);
   }
 };
