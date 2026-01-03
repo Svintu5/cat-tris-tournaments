@@ -9,8 +9,17 @@ async function loadRoom(code) {
   const blob = blobs.blobs.find((b) => b.pathname === key);
   if (!blob) return null;
 
-  const res = await fetch(blob.url);
-  return await res.json();
+  const url = blob.downloadUrl || blob.url;
+
+  const res = await fetch(url);
+  const text = await res.text();
+
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    console.error('Failed to parse room JSON for', code, 'from', url, 'got:', text.slice(0, 200));
+    return null;
+  }
 }
 
 async function saveRoom(room) {
