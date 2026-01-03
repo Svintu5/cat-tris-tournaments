@@ -571,18 +571,24 @@
   }
 
   // 🔥 СИНХРОНИЗАЦИЯ ОЧКОВ
-  function startScoreSync() {
-    if (scoreInterval) clearInterval(scoreInterval);
-    scoreInterval = setInterval(async () => {
-      if (window.tetris?.player?.score !== undefined && supabaseClient) {
-        try {
-          await supabaseClient.from('tournament_scores').upsert({
-            room_code: roomCode, player_name: playerName, score: window.tetris.player.score
-          }, { onConflict: 'room_code,player_name' });
-        } catch (e) { console.log('Score sync error:', e); }
+function startScoreSync() {
+  if (scoreInterval) clearInterval(scoreInterval);
+  scoreInterval = setInterval(async () => {
+    if (window.tetris?.player?.score !== undefined && supabaseClient) {
+      try {
+        await supabaseClient.from('tournament_scores').upsert({
+          room_code: roomCode, 
+          player_name: playerName, 
+          score: window.tetris.player.score,
+          lines: window.tetris.player.lines || 0,      // ← ДОБАВИТЬ!
+          completed_games: window.tetris.player.games || 0  // ← ДОБАВИТЬ!
+        }, { onConflict: 'room_code,player_name' });
+      } catch (e) { 
+        console.log('Score sync error:', e); 
       }
-    }, 3000);
-  }
+    }
+  }, 2000); // ЧАЩЕ!
+}
 
   // 🔥 ТЕТРИС (ПОЛНЫЙ КОД)
   function initTetris() {
@@ -602,7 +608,7 @@
     });
 
     const arena = createMatrix(10, 15);
-    let player = { pos: { x: 0, y: 0 }, matrix: null, score: 0 };
+    let player = { pos: { x: 0, y: 0 }, matrix: null, score: 0, lines: 0, games: 0 };
     let dropCounter = 0, dropInterval = 800, lastTime = 0, fastDrop = false;
     const SPEED_STEP = 0.95, MIN_DROP_INTERVAL = 120;
     let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
@@ -670,15 +676,23 @@
     }
 
     function arenaSweep() {
-      let rowCount = 1;
-      outer: for (let y = arena.length - 1; y > 0; --y) {
-        for (let x = 0; x < arena[y].length; ++x) if (arena[y][x] === 0) continue outer;
-        const row = arena.splice(y, 1)[0].fill(0); arena.unshift(row); ++y;
-        player.score += rowCount * 10; rowCount *= 2;
-        dropInterval = Math.max(MIN_DROP_INTERVAL, dropInterval * SPEED_STEP);
-      }
-      updateScore();
-    }
+  let rowCount = 1;
+  outer: for (let y = arena.length - 1; y > 0; --y) {
+    for (let x = 0; x < arena[y].length; ++x) if (arena[y][x] === 0) continue outer;
+    const row = arena.splice(y, 1)[0].fill(0); arena.unshift(row); ++y;
+    player.score += rowCount * 10; 
+    player.lines += 1;  // ← СЧИТАЕМ ЛИНИИ!
+    rowCount *= 2;
+    dropInterval = Math.max(MIN_DROP_INTERVAL, dropInterval * SPEED_STEP);
+  }
+  
+  // ✅ НОВАЯ ИГРА (game over)
+  if (collide(arena, player)) {
+    player.games += 1;  // ← СЧИТАЕМ ЗАВЕРШЁННЫЕ ИГРЫ!
+  }
+  
+  updateScore();
+}
 
     function playerDrop() {
       player.pos.y++; if (collide(arena, player)) {
@@ -785,79 +799,80 @@ async function checkTournamentStatus() {
   }
 }
 
-// 🔥 АВТОЗАВЕРШЕНИЕ ТУРНИРА
+// 🔥 АВТОЗАВЕРШЕНИЕ ТУРНИРА (УПРОЩЁННАЯ ВЕРСИЯ)
 let tournamentFinishCheck = null;
 
 async function checkTournamentFinish() {
-  if (!supabaseClient || !roomCode) return;
-  
-  console.log('🔍 Checking tournament finish...'); // DEBUG
+  console.log('🔍 Проверка завершения по циклам игры...');
   
   try {
-    // Проверяем статус комнаты
-    const { data: room } = await supabaseClient
-      .from('tournament_rooms')
-      .select('status')
-      .eq('code', roomCode)
-      .single();
-    
-    if (room?.status === 'finished') {
-      console.log('✅ Tournament already finished');
-      window.location.href = `tournament-end.html?room=${roomCode}`;
-      return;
-    }
-    
-    // Всех игроков комнаты
-    const { data: players } = await supabaseClient
+    // 1️⃣ Все игроки комнаты
+    const { data: playersResult } = await supabaseClient
       .from('tournament_players')
       .select('player_name')
       .eq('room_code', roomCode);
     
-    console.log('👥 Players:', players?.length || 0);
+    if (!playersResult || playersResult.length === 0) {
+      console.log('❌ Нет игроков');
+      return;
+    }
     
-    if (!players || players.length === 0) return;
+    console.log(`👥 Игроков: ${playersResult.length}`);
     
-    // Очки всех игроков
-    const { data: scores } = await supabaseClient
+    // 2️⃣ СТАТИСТИКА КАЖДОГО ИГРОКА (линии, игры, очки)
+    const { data: gameStats } = await supabaseClient
       .from('tournament_scores')
-      .select('player_name,score')
+      .select('player_name,score,lines,completed_games')  // ← НОВЫЕ ПОЛЯ!
       .eq('room_code', roomCode);
     
-    console.log('📊 Scores:', scores);
+    console.log('🎮 Статистика:', gameStats);
     
-    // ✅ Все сыграли (score > 0)
-    const allPlayed = players.every(p => {
-      const playerScore = scores?.find(s => s.player_name === p.player_name);
-      return playerScore && playerScore.score > 0;
+    // 3️⃣ ✅ ПРОВЕРКА: У ВСЕХ есть ХОТЯ БЫ 1 ЗАВЕРШЁННАЯ ИГРА
+    const allCompletedGames = playersResult.every(player => {
+      const playerStats = gameStats?.find(stats => stats.player_name === player.player_name);
+      
+      // Завершил хотя бы 1 игру (lines > 0 ИЛИ completed_games >= 1)
+      const hasCompletedGame = playerStats && (
+        (playerStats.lines && playerStats.lines > 0) || 
+        (playerStats.completed_games && playerStats.completed_games >= 1)
+      );
+      
+      console.log(`  ${player.player_name}: lines=${playerStats?.lines || 0}, games=${playerStats?.completed_games || 0} → ${hasCompletedGame ? '✅' : '❌'}`);
+      
+      return hasCompletedGame;
     });
     
-    console.log('🎯 All played:', allPlayed);
+    console.log(`🎯 Все завершили хотя бы 1 игру: ${allCompletedGames}`);
     
-    if (allPlayed) {
-      console.log('🏁 Finishing tournament...');
-      const { error } = await supabaseClient
+    // 4️⃣ ФИНИШ!
+    if (allCompletedGames) {
+      console.log('🏁 Все сыграли 1 цикл → ФИНИШ!');
+      
+      await supabaseClient
         .from('tournament_rooms')
         .update({ status: 'finished' })
         .eq('code', roomCode);
       
-      if (!error) {
-        console.log('✅ Status updated to finished');
-        setTimeout(() => {
-          window.location.href = `tournament-end.html?room=${roomCode}`;
-        }, 1500);
-      }
+      alert('🏆 Все завершили первую игру! Показываем результаты.');
+      setTimeout(() => {
+        window.location.href = `tournament-end.html?room=${roomCode}`;
+      }, 1000);
     }
-  } catch (e) {
-    console.error('❌ Finish check error:', e);
+    
+  } catch (error) {
+    console.error('💥 Ошибка:', error);
   }
 }
 
   // 🔥 ЗАПУСК
   initSupabase();
 
-    // 🔥 АВТОПРОВЕРКА ЗАВЕРШЕНИЯ (ЗАПУСК ТОЛЬКО ПОСЛЕ SUPABASE)
-  if (!tournamentFinishCheck) {
-    tournamentFinishCheck = setInterval(checkTournamentFinish, 3000);
+    // 🔥 ЗАПУСК ПРОВЕРКИ ТОЛЬКО ПОСЛЕ SUPABASE
+  if (playerRole === 'host') {
+    console.log('👑 Хост: запускаю проверку завершения');
+    if (!tournamentFinishCheck) {
+      tournamentFinishCheck = setInterval(checkTournamentFinish, 2000); // ЧАЩЕ!
+    }
   }
   
   // 🔥 ESC для хоста
