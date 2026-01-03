@@ -423,7 +423,7 @@ const BLOB_BASE =
   'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
 async function fetchRoom(roomCode) {
-  const res = await fetch('/api/tournament', {
+  const res = await fetch(`${location.origin}/api/tournament`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -432,12 +432,15 @@ async function fetchRoom(roomCode) {
     })
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) {
+    console.error('fetchRoom error', res.status);
+    return null;
+  }
   return await res.json();
 }
- 
+
 async function saveRoom(room) {
-  await fetch('/api/tournament', {
+  await fetch(`${location.origin}/api/tournament`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
