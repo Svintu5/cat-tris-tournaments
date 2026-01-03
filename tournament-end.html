@@ -5,115 +5,122 @@
   const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
 
+  // 🔥 БЕЗОПАСНЫЙ ДОСТУП К ЭЛЕМЕНТАМ
+  const roomTitle = document.getElementById('roomTitle');
+  const leaderboard = document.getElementById('leaderboard');
+  
   if (!roomCode) {
-    document.querySelector('.room-title').textContent = '❌ No room code';
-    document.querySelector('#leaderboard').innerHTML = '<h2>ERROR</h2><div><a href="index.html">← Lobby</a></div>';
-    throw new Error('No room code');
+    if (roomTitle) roomTitle.textContent = '❌ No room code';
+    if (leaderboard) {
+      leaderboard.innerHTML = '<h2>ERROR</h2><div><a href="index.html">← Lobby</a></div>';
+    }
+    console.error('No room code');
+    return;
   }
+
+  if (!roomTitle || !leaderboard) {
+    console.error('DOM elements not found');
+    return;
+  }
+
+  roomTitle.textContent = `Tournament ${roomCode.toUpperCase()}...`;
 
   let supabaseClient = null;
   let waitAttempts = 0;
-  const MAX_WAIT = 50; // 5 секунд максимум
 
-  // 🔥 НАДЁЖНАЯ ИНИЦИАЛИЗАЦИЯ
-  function initSupabase() {
+  // 🔥 НАДЁЖНАЯ ИНИЦИАЛИЗАЦИЯ с FALLBACK
+  async function initSupabase() {
     waitAttempts++;
     
+    // ✅ Supabase готов
     if (typeof supabase !== 'undefined' && supabase.createClient) {
-      console.log('✅ Supabase загружен!');
-      const { createClient } = supabase;
-      supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      loadResults();
+      try {
+        const { createClient } = supabase;
+        supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Supabase OK');
+        await loadResults();
+        return;
+      } catch (e) {
+        console.error('Supabase init error:', e);
+      }
+    }
+    
+    // ❌ TIMEOUT 10 сек → STATIC FALLBACK
+    if (waitAttempts > 100) {
+      console.log('⏰ Supabase timeout → показываем статичные данные');
+      showStaticResults();
       return;
     }
     
-    if (waitAttempts > MAX_WAIT) {
-      console.error('💥 Supabase не загрузился за 5 сек');
-      showError('Supabase не доступен. Проверь интернет.');
-      return;
-    }
-    
-    console.log(`⏳ Ожидание Supabase... (${waitAttempts}/${MAX_WAIT})`);
     setTimeout(initSupabase, 100);
   }
 
-  // 🔥 ОШИБКА
-  function showError(message) {
-    document.querySelector('.room-title').textContent = '❌ Ошибка';
-    document.getElementById('leaderboard').innerHTML = `
-      <h2>ОШИБКА</h2>
+  // 🔥 STATIC FALLBACK (работает БЕЗ Supabase)
+  function showStaticResults() {
+    roomTitle.textContent = `Tournament ${roomCode.toUpperCase()}`;
+    leaderboard.innerHTML = `
+      <h2>FINAL RESULTS</h2>
       <div style="color: #FF6B6B; padding: 20px;">
-        ${message}<br><br>
-        <a href="index.html" style="color: #00FF88;">← Вернуться в лобби</a>
+        ⚠️ Не удалось загрузить результаты<br>
+        <a href="index.html" style="color: #00FF88;">← Новая игра</a>
       </div>
     `;
   }
 
-  // 🔥 ЗАГРУЗКА РЕЗУЛЬТАТОВ
+  // 🔥 РЕАЛЬНЫЕ ДАННЫЕ
   async function loadResults() {
-    console.log('🔄 Загрузка результатов для комнаты:', roomCode);
-    
     try {
-      document.querySelector('.room-title').textContent = `Tournament ${roomCode.toUpperCase()}...`;
+      console.log('🔄 Загрузка:', roomCode);
       
       // Комната
-      const { data: room, error: roomError } = await supabaseClient
+      const { data: room } = await supabaseClient
         .from('tournament_rooms')
         .select('name')
         .eq('code', roomCode)
-        .single();
+        .single().catch(() => ({}));
       
-      if (roomError && roomError.code !== 'PGRST116') { // not found
-        throw roomError;
-      }
-
-      // Результаты
-      const { data: scores, error: scoresError } = await supabaseClient
+      // Очки
+      const { data: scores } = await supabaseClient
         .from('tournament_scores')
         .select('player_name,score')
         .eq('room_code', roomCode)
         .order('score', { ascending: false });
 
-      if (scoresError) throw scoresError;
-
       console.log('🏆 Комната:', room);
-      console.log('📊 Результаты:', scores);
+      console.log('📊 Очки:', scores);
 
-      // Название
-      document.getElementById('roomTitle').textContent = room?.name || `Tournament ${roomCode.toUpperCase()}`;
+      roomTitle.textContent = room?.name || `Tournament ${roomCode.toUpperCase()}`;
 
-      // Лидерборд
-      const leaderboard = document.getElementById('leaderboard');
       if (scores && scores.length > 0) {
         leaderboard.innerHTML = `
           <h2>FINAL RESULTS (${scores.length} players)</h2>
-          ${scores.map((score, index) => {
-            const classes = [];
-            if (index === 0) classes.push('gold', 'winner');
-            else if (index === 1) classes.push('silver');
-            else if (index === 2) classes.push('bronze');
-            
-            return `
-              <div class="player-row ${classes.join(' ')}">
-                <span>${index + 1}️⃣ ${score.player_name}</span>
-                <span style="color: #00FF88; font-weight: bold;">${score.score} pts</span>
-              </div>
-            `;
+          ${scores.map((score, i) => {
+            const classes = i === 0 ? 'gold winner' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+            return `<div class="player-row ${classes}">
+              <span>${i + 1}️⃣ ${score.player_name}</span>
+              <span style="color: #00FF88;">${score.score} pts</span>
+            </div>`;
           }).join('')}
         `;
       } else {
         leaderboard.innerHTML = `
           <h2>FINAL RESULTS</h2>
-          <div style="color: #FF6B6B;">😿 Нет результатов для комнаты ${roomCode}</div>
+          <div style="color: #FF6B6B;">😿 Нет результатов</div>
         `;
       }
     } catch (error) {
-      console.error('❌ Ошибка загрузки:', error);
-      showError(`Ошибка загрузки: ${error.message}`);
+      console.error('❌ Load error:', error);
+      leaderboard.innerHTML = `
+        <h2>ERROR</h2>
+        <div style="color: #FF6B6B;">
+          ${error.message}<br>
+          <a href="index.html">← Lobby</a>
+        </div>
+      `;
     }
   }
 
   // 🔥 ЗАПУСК
-  console.log('🚀 Запуск tournament-end.html');
+  console.log('🚀 tournament-end.html room:', roomCode);
   initSupabase();
 </script>
