@@ -844,7 +844,7 @@ if (dropCounter > currentInterval) playerDrop();
 
 function handleAction(action) {
   if (action === 'start') {
-    // до старта турнира никому нельзя начать игру
+    // пока турнир в waiting — никто не может стартовать
     if (tournamentStatus === 'waiting') {
       startOverlay.textContent = 'Waiting for host to start';
       startOverlay.style.display = 'block';
@@ -874,6 +874,7 @@ function handleAction(action) {
 
 document.addEventListener('keydown', event => {
   if (event.key === 'Enter') {
+    event.preventDefault();
     handleAction('start');
     return;
   }
