@@ -698,23 +698,29 @@ window.sendScore = async (finalScore) => {
     }
 
     function playerReset() {
-      const pieces = 'TJLOSZI';
-      player.matrix = createPiece(pieces[(pieces.length * Math.random()) | 0]);
-      player.pos.y = 0;
-      player.pos.x =
-        (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
-      if (collide(arena, player)) {
-        arena.forEach(row => row.fill(0));
-        player.score = 0;
-        dropInterval = 800;
+  const pieces = 'TJLOSZI';
+  player.matrix = createPiece(pieces[(pieces.length * Math.random()) | 0]);
+  player.pos.y = 0;
+  player.pos.x =
+    (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
 
-        gameStarted = false;
-        gameOver = true;
-        startOverlay.textContent = 'Game Over Press Enter';
-        startOverlay.style.display = 'block';
-      }
+  if (collide(arena, player)) {
+    // 💾 сохраняем финальный счёт до сброса
+    const finalScore = player.score;
+    if (typeof window.sendScore === 'function') {
+      window.sendScore(finalScore);
     }
 
+    arena.forEach(row => row.fill(0));
+    player.score = 0;
+    dropInterval = 800;
+
+    gameStarted = false;
+    gameOver = true;
+    startOverlay.textContent = 'Game Over Press Enter';
+    startOverlay.style.display = 'block';
+  }
+}
     function playerRotate(dir) {
       let offset = 1;
       rotate(player.matrix, dir);
