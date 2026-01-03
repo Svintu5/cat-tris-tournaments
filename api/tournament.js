@@ -1,5 +1,5 @@
 // api/tournament.js
-import { put, list, get } from '@vercel/blob'; // добавь get
+import { put, list } from '@vercel/blob';
 
 const roomKey = (code) => `tournaments/${code}.json`;
 
@@ -9,13 +9,24 @@ async function loadRoom(code) {
   const blob = blobs.blobs.find((b) => b.pathname === key);
   if (!blob) return null;
 
-  // 🔹 читаем содержимое через SDK, без fetch(blob.url)
-  const file = await get(blob.pathname);        // или get(key)
-  const text = await file.text();
+  // пробуем downloadUrl, если есть, иначе url + ?download=1
+  const baseUrl = blob.downloadUrl || blob.url;
+  const url = baseUrl.includes('?') ? baseUrl : `${baseUrl}?download=1`;
+
+  const res = await fetch(url);
+  const text = await res.text();
+
   try {
     return JSON.parse(text);
   } catch (e) {
-    console.error('Failed to parse room JSON for', code, 'got:', text.slice(0, 200));
+    console.error(
+      'Failed to parse room JSON for',
+      code,
+      'from',
+      url,
+      'got:',
+      text.slice(0, 200)
+    );
     return null;
   }
 }
