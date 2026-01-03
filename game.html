@@ -842,10 +842,10 @@ if (dropCounter > currentInterval) playerDrop();
       document.getElementById('topScore').textContent = topScore;
     }
 
-    function handleAction(action) {
+  function handleAction(action) {
   if (action === 'start') {
-    // 🛑 не даём стартовать до начала турнира
-    if (tournamentStatus !== 'started') {
+    // хост может начать всегда, игроки — только после старта турнира
+    if (playerRole !== 'host' && tournamentStatus !== 'started') {
       startOverlay.textContent = 'Waiting for host to start';
       startOverlay.style.display = 'block';
       return;
@@ -865,19 +865,12 @@ if (dropCounter > currentInterval) playerDrop();
   }
 
   if (!gameStarted) return;
-      
-      if (action === 'left') playerMove(-1);
-      if (action === 'right') playerMove(1);
-      if (action === 'down') playerDrop();
-      if (action === 'up') playerRotate(1);
-    }
 
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Enter') {
-        handleAction('start');
-        return;
-      }
-
+  if (action === 'left') playerMove(-1);
+  if (action === 'right') playerMove(1);
+  if (action === 'down') playerDrop();
+  if (action === 'up') playerRotate(1);
+}
       if (!gameStarted) return;
 
       if (event.keyCode === 37) handleAction('left');
