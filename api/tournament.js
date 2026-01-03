@@ -112,7 +112,7 @@ if (action === 'submit_score') {
       score: sc
     }));
 
-  // турнир заканчивается после первой успешной игры
+  // турнир сразу завершается
   room.status = 'finished';
 
   await saveRoom(room);
