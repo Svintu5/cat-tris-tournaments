@@ -1,6 +1,29 @@
 // api/tournament.js
+import { put, list } from '@vercel/blob'; // [web:60]
 
-const rooms = {};
+// путь к файлу комнаты в Blob
+const roomKey = (code) => `tournaments/${code}.json`;
+
+// прочитать JSON комнаты из Blob
+async function loadRoom(code) {
+  const key = roomKey(code);
+
+  // list() потому что у Blob SDK нет прямого get(), ищем файл по pathname [web:60][web:91]
+  const blobs = await list({ prefix: key });
+  const blob = blobs.blobs.find((b) => b.pathname === key);
+  if (!blob) return null;
+
+  const res = await fetch(blob.url);
+  return await res.json();
+}
+
+// сохранить JSON комнаты в Blob
+async function saveRoom(room) {
+  await put(roomKey(room.code), JSON.stringify(room, null, 2), {
+    contentType: 'application/json',
+    access: 'public'
+  });
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -15,28 +38,29 @@ export default async function handler(req, res) {
 
   // CREATE ROOM
   if (action === 'create') {
-    if (rooms[code]) {
+    let room = await loadRoom(code);
+    if (room) {
       return res.status(400).json({ error: 'Room already exists' });
     }
 
-    const room = {
+    room = {
       code,
       host,
       name: roomName || `${host}'s Cat Battle`,
-      status: 'waiting',
+      status: 'waiting', // waiting | started | finished
       players: [host],
       scores: { [host]: 0 }
     };
 
-    rooms[code] = room;
-
+    await saveRoom(room);
     return res.json(room);
   }
 
   // JOIN ROOM
   if (action === 'join') {
-    const room = rooms[code];
+    const room = await loadRoom(code);
     if (!room) {
+      // фронт ждёт { room: null } как "комната не найдена"
       return res.json({ room: null });
     }
 
@@ -46,7 +70,8 @@ export default async function handler(req, res) {
 
     if (!room.players.includes(playerName)) {
       room.players.push(playerName);
-      room.scores[playerName] = 0;
+      room.scores[playerName] = room.scores[playerName] || 0;
+      await saveRoom(room);
     }
 
     return res.json({ room });
@@ -54,18 +79,20 @@ export default async function handler(req, res) {
 
   // START TOURNAMENT
   if (action === 'start') {
-    const room = rooms[code];
+    const room = await loadRoom(code);
     if (!room) {
       return res.status(400).json({ error: 'Room not found' });
     }
 
     room.status = 'started';
+    await saveRoom(room);
+
     return res.json({ room });
   }
 
   // SUBMIT SCORE
   if (action === 'submit_score') {
-    const room = rooms[code];
+    const room = await loadRoom(code);
     if (!room) {
       return res.status(400).json({ error: 'Room not found' });
     }
@@ -77,6 +104,7 @@ export default async function handler(req, res) {
     const best = Math.max(prev, Number(score) || 0);
     room.scores[playerName] = best;
 
+    // лидерборд
     const leaderboard = Object.entries(room.scores)
       .sort((a, b) => b[1] - a[1])
       .map(([name, sc], index) => ({
@@ -84,6 +112,8 @@ export default async function handler(req, res) {
         name,
         score: sc
       }));
+
+    await saveRoom(room);
 
     return res.json({
       room: {
