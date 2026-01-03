@@ -301,6 +301,37 @@
       font-weight: 600;
     }
 
+    /* 🔥 КНОПКА СТАРТ ТУРНИРА */
+.start-tournament-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  background: linear-gradient(45deg, #00FF88, #00D06A);
+  color: #000;
+  border: none;
+  border-radius: 20px;
+  padding: 20px 32px;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(0,255,136,0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  z-index: 2000;
+  transition: all 0.3s ease;
+  font-family: 'Switzer', sans-serif;
+}
+
+.start-tournament-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 40px rgba(0,255,136,0.6);
+}
+
+.tournament-started {
+  background: linear-gradient(45deg, #FF6B6B, #FF8B8B) !important;
+  color: #fff !important;
+}
+
     /* 🔥 НОВЫЕ СТИЛИ ДЛЯ ТУРНИРА */
     .tournament-info {
       position: fixed;
@@ -376,6 +407,10 @@
       <span class="promo-text">Made for</span>
       <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
     </div>
+    <!-- 🔥 КНОПКА СТАРТ ТУРНИРА (только для хоста) -->
+<button class="start-tournament-btn" id="startTournamentBtn" style="display: none;">
+  🏁 Start tournament
+</button>
   </div>
 
 <script>
@@ -405,31 +440,88 @@
 
   // 🔥 SUPABASE
   async function initSupabase() {
-    if (typeof supabase === 'undefined') {
-      setTimeout(initSupabase, 100);
-      return;
-    }
-    
-    if (supabaseClient) return supabaseClient;
-    
-    const { createClient } = supabase;
-    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabaseClient = supabaseClient;
-
-    // ПОКАЗЫВАЕМ КОМНАТУ
-    const tourneyInfo = document.querySelector('.tournament-info');
-    if (tourneyInfo) {
-      tourneyInfo.style.display = 'block';
-      tourneyInfo.innerHTML = `
-        ROOM: <span style="color: #FFD700;">${roomCode.toUpperCase()}</span> | 
-        <span style="color: #00FF88;">${playerName}</span> (${playerRole.toUpperCase()})
-      `;
-    }
-
-    if (playerRole === 'host') createLiveLeaderboard();
-    initTetris();
-    startScoreSync();
+  if (typeof supabase === 'undefined') {
+    setTimeout(initSupabase, 100);
+    return;
   }
+  
+  if (supabaseClient) return supabaseClient;
+  
+  const { createClient } = supabase;
+  supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  window.supabaseClient = supabaseClient;
+
+  // 🔥 ПОКАЗЫВАЕМ КОМНАТУ + СТАТУС
+  const tourneyInfo = document.querySelector('.tournament-info');
+  if (tourneyInfo) {
+    tourneyInfo.style.display = 'block';
+    tourneyInfo.innerHTML = `
+      ROOM: <span style="color: #FFD700;">${roomCode.toUpperCase()}</span> | 
+      <span style="color: #00FF88;">${playerName}</span> (${playerRole.toUpperCase()})
+    `;
+  }
+
+  // 🔥 КНОПКА СТАРТ ТУРНИРА (ТОЛЬКО ДЛЯ ХОСТА)
+  if (playerRole === 'host') {
+    const startBtn = document.getElementById('startTournamentBtn');
+    startBtn.style.display = 'block';
+
+    startBtn.onclick = async () => {
+      if (confirm('🚀 НАЧАТЬ ТУРНИР?\n\nПосле этого никто не сможет присоединиться!')) {
+        try {
+          const { error } = await supabaseClient
+            .from('tournament_rooms')
+            .update({ status: 'started' })
+            .eq('code', roomCode);
+          
+          if (!error) {
+            alert('✅ Турнир начался! 🎮');
+            startBtn.remove();
+          } else {
+            alert('❌ Ошибка запуска: ' + error.message);
+          }
+        } catch (err) {
+          alert('❌ Ошибка: ' + err.message);
+        }
+      }
+    };
+  }
+
+  // 🔥 РЕАЛТАЙМ ПОДПИСКА НА ИЗМЕНЕНИЯ СТАТУСА
+  supabaseClient
+    .channel(`room:${roomCode}`)
+    .on(
+      'postgres_changes',
+      { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'tournament_rooms', 
+        filter: `code=eq.${roomCode}` 
+      },
+      (payload) => {
+        if (payload.new.status === 'started') {
+          const ti = document.querySelector('.tournament-info');
+          if (ti) {
+            ti.innerHTML += ' | 🏁 <span style="color:#FFD700">STARTED!</span>';
+            ti.classList.add('tournament-started');
+          }
+
+          // 🔥 АВТОЗАПУСК ИГРЫ ДЛЯ ВСЕХ
+          const overlay = document.getElementById('startOverlay');
+          if (overlay) overlay.style.display = 'none';
+          
+          if (window.tetris && !window.tetris.gameStarted) {
+            window.tetris.gameStarted = true;
+          }
+        }
+      }
+    )
+    .subscribe();
+
+  if (playerRole === 'host') createLiveLeaderboard();
+  initTetris();
+  startScoreSync();
+}
 
   // 🔥 ЛИДЕРБОРД (ХОСТ)
   function createLiveLeaderboard() {
@@ -671,6 +763,28 @@
     window.tetris.gameStarted = gameStarted; playerReset(); updateScore(); update();
   }
 
+  // 🔥 ПРОВЕРКА ТЕКУЩЕГО СТАТУСА ТУРНИРА при загрузке
+async function checkTournamentStatus() {
+  if (!roomCode || !supabaseClient) return;
+  
+  try {
+    const { data: room } = await supabaseClient
+      .from('tournament_rooms')
+      .select('status')
+      .eq('code', roomCode)
+      .single();
+    
+    if (room?.status === 'started') {
+      const ti = document.querySelector('.tournament-info');
+      if (ti) ti.innerHTML += ' | 🏁 <span style="color:#FFD700">STARTED!</span>';
+      const overlay = document.getElementById('startOverlay');
+      if (overlay) overlay.style.display = 'none';
+    }
+  } catch (e) {
+    console.log('Status check error:', e);
+  }
+}
+  
   // 🔥 ЗАПУСК
   initSupabase();
 
