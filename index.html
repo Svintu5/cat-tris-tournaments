@@ -1,16 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Турнир</title>
-</head>
-<body>
-  <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://YOUR_SUPABASE_URL/client/v1/?apikey=YOUR_ANON_KEY"></script>
-  <script type="text/babel">
-    // КОД ТУРНИРА ЗДЕСЬ (из прошлого сообщения)
+<body style="font-family: Arial; padding: 20px; max-width: 600px; margin: 0 auto;">
+  <h1>🏆 Турнирная таблица</h1>
+  <div id="players"></div>
+  <div id="leaderboard"></div>
+  
+  <script>
+    let players = [];
+    let tournamentId = 'TEST123';
+    
+    function addPlayer(nick) {
+      players.push({nick, score: 0});
+      updateDisplay();
+    }
+    
+    function winMatch(winner) {
+      players = players.map(p => 
+        p.nick === winner ? {...p, score: p.score + 3} : p
+      );
+      updateDisplay();
+    }
+    
+    function updateDisplay() {
+      document.getElementById('players').innerHTML = 
+        players.map(p => `<div>${p.nick}: ${p.score} очков</div>`).join('');
+      
+      let sorted = [...players].sort((a,b) => b.score - a.score);
+      document.getElementById('leaderboard').innerHTML = 
+        sorted.map((p,i) => `<div style="background: ${i===0?'gold':''}">${i+1}. ${p.nick}: ${p.score}</div>`).join('');
+    }
   </script>
+  
+  <input id="nick" placeholder="Ваш ник" style="padding:10px; width:200px">
+  <button onclick="addPlayer(document.getElementById('nick').value)">Присоединиться</button>
+  <br><br>
+  <button onclick="winMatch('Игрок1')">Игрок1 победил</button>
+  <button onclick="winMatch('Игрок2')">Игрок2 победил</button>
 </body>
 </html>
+
