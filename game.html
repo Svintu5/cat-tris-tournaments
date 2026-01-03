@@ -419,6 +419,28 @@ const roomCode = urlParams.get('room');
 const playerName = decodeURIComponent(urlParams.get('name') || 'Player');
 const playerRole = urlParams.get('role') || 'player';
 
+const BLOB_BASE =
+  'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
+
+async function fetchRoom(roomCode) {
+  const roomUrl = `${BLOB_BASE}/${roomCode}.json?download=1`;
+  const res = await fetch(roomUrl);
+  if (!res.ok) return null;
+  return await res.json();
+}
+
+async function saveRoom(room) {
+  await fetch('/api/tournament', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      code: room.code,
+      action: 'save_room',
+      room
+    })
+  });
+}
+  
 // 🔹 статус турнира по умолчанию
 let tournamentStatus = 'waiting';
 
@@ -460,19 +482,14 @@ if (playerRole === 'host') {
     if (!confirm('🚀 НАЧАТЬ ТУРНИР?')) return;
 
     try {
-      const res = await fetch('/api/tournament', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          code: roomCode,
-          action: 'start'
-        })
-      });
-      const data = await res.json();
-      if (data.error) {
-        alert('❌ ' + data.error);
+      const room = await fetchRoom(roomCode);
+      if (!room) {
+        alert('❌ Room not found');
         return;
       }
+
+      room.status = 'started';
+      await saveRoom(room);
 
       document.getElementById('status').textContent = '🏁 Турнир начат!';
       btn.classList.add('tournament-started');
@@ -486,34 +503,34 @@ if (playerRole === 'host') {
 // 🔁 Общий поллинг состояния турнира для всех игроков
 setInterval(async () => {
   try {
-    const res = await fetch('/api/tournament', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code: roomCode,
-        action: 'state'
-      })
-    });
+    const room = await fetchRoom(roomCode);
+    if (!room) return;
 
-    const data = await res.json();
-    if (!res.ok || data.error) return;
+    tournamentStatus = room.status;
 
-    tournamentStatus = data.room.status;
-
-    if (data.room.status === 'waiting') {
+    if (room.status === 'waiting') {
       document.getElementById('status').textContent = '⏳ Waiting for host...';
-    } else if (data.room.status === 'started') {
-      document.getElementById('status').textContent = '🎮 Tournament started! Press Start';
+    } else if (room.status === 'started') {
+      document.getElementById('status').textContent =
+        '🎮 Tournament started! Press Start';
     }
 
+    const leaderboardArr = Object.entries(room.scores || {})
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, sc], index) => ({
+        rank: index + 1,
+        name,
+        score: sc
+      }));
+
     document.getElementById('leaderboard').innerHTML =
-      data.leaderboard.map(p =>
+      leaderboardArr.map(p =>
         `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
            🏅 #${p.rank} ${p.name}: ${p.score}
          </div>`
       ).join('');
 
-    if (data.room.status === 'finished') {
+    if (room.status === 'finished') {
       document.getElementById('status').textContent = '🏁 Турнир завершён!';
       setTimeout(() => {
         window.location.href =
@@ -528,34 +545,41 @@ setInterval(async () => {
 // Отправка очков в Blob
 window.sendScore = async (finalScore) => {
   try {
-    const res = await fetch('/api/tournament', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        code: roomCode,
-        action: 'submit_score',
-        playerName,
-        score: finalScore
-      })
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      alert(data.error || 'Tournament error');
+    const room = await fetchRoom(roomCode);
+    if (!room) {
+      alert('Room not found');
       return;
     }
 
+    room.scores = room.scores || {};
+    room.played = room.played || {};
+
+    const prev = room.scores[playerName] || 0;
+    room.scores[playerName] = Math.max(prev, Number(finalScore) || 0);
+    room.played[playerName] = true;
+
+    const allDone = room.players.every(name => room.played?.[name]);
+    room.status = allDone ? 'finished' : 'started';
+
+    await saveRoom(room);
+
+    const leaderboardArr = Object.entries(room.scores)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, sc], index) => ({
+        rank: index + 1,
+        name,
+        score: sc
+      }));
+
     document.getElementById('leaderboard').innerHTML =
-      data.leaderboard.map(p =>
+      leaderboardArr.map(p =>
         `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
            🏅 #${p.rank} ${p.name}: ${p.score}
          </div>`
       ).join('');
 
-    if (data.room.status === 'finished') {
+    if (room.status === 'finished') {
       document.getElementById('status').textContent = '🏁 Турнир завершён!';
-
-      // редирект на экран результатов
       setTimeout(() => {
         window.location.href =
           `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
@@ -567,7 +591,6 @@ window.sendScore = async (finalScore) => {
     console.error('Tournament error:', e);
   }
 };
-
 
 // ТЕТРИС ИГРА
     const canvas = document.getElementById('game');
