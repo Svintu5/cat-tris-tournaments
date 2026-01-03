@@ -117,86 +117,87 @@
   </div>
 
   <script>
-    async function initWhenReady() {
-      const roomTitle = document.getElementById('roomTitle');
-      const leaderboardEl = document.getElementById('leaderboard');
-      
-      if (!roomTitle || !leaderboardEl) {
-        setTimeout(initWhenReady, 50);
-        return;
-      }
+  async function loadState() {
+    const roomTitle = document.getElementById('roomTitle');
+    const leaderboardEl = document.getElementById('leaderboard');
+    if (!roomTitle || !leaderboardEl) return;
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const roomCodeRaw = urlParams.get('room') || 'UNKNOWN';
-      const roomCode = roomCodeRaw.toUpperCase();
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCodeRaw = urlParams.get('room') || 'UNKNOWN';
+    const roomCode = roomCodeRaw.toUpperCase();
 
-      roomTitle.textContent = `Tournament ${roomCode} – Final Results`;
+    roomTitle.textContent = `Tournament ${roomCode} – Final Results`;
 
-      try {
-        const res = await fetch('/api/tournament', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            code: roomCodeRaw,
-            action: 'state'
-          })
-        });
-        const data = await res.json();
+    try {
+      const res = await fetch('/api/tournament', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: roomCodeRaw,
+          action: 'state'
+        })
+      });
+      const data = await res.json();
 
-        if (!res.ok || data.error) {
-          leaderboardEl.innerHTML = `
-            <h2>FINAL RESULTS</h2>
-            <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
-              ⚠️ ${data.error || 'Tournament data not found.'}<br><br>
-              <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
-                🎮 NEW TOURNAMENT
-              </a>
-            </div>
-          `;
-          return;
-        }
-
-        const rows = (data.leaderboard || []).map((p, idx) => `
-          <div style="
-              display:flex;
-              justify-content:space-between;
-              align-items:center;
-              padding:6px 0;
-              border-bottom:${idx === (data.leaderboard.length - 1)
-                ? 'none' : '1px solid rgba(255,255,255,0.12)'};
-          ">
-            <span>🏅 #${p.rank} ${p.name}</span>
-            <span>${p.score}</span>
-          </div>
-        `).join('') || `
-          <div style="color:#FF6B6B;padding:12px 0;text-align:center;opacity:0.9;">
-            No scores submitted.
-          </div>
-        `;
-
-        leaderboardEl.innerHTML = `
-          <h2>FINAL RESULTS</h2>
-          ${rows}
-        `;
-      } catch (e) {
-        console.error(e);
+      if (!res.ok || data.error) {
         leaderboardEl.innerHTML = `
           <h2>FINAL RESULTS</h2>
           <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
-            ⚠️ Error loading results.<br><br>
+            ⚠️ ${data.error || 'Tournament data not found.'}<br><br>
             <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
               🎮 NEW TOURNAMENT
             </a>
           </div>
         `;
+        return;
       }
-    }
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initWhenReady);
-    } else {
-      initWhenReady();
+      const rows = (data.leaderboard || []).map((p, idx) => `
+        <div style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:6px 0;
+            border-bottom:${idx === (data.leaderboard.length - 1)
+              ? 'none' : '1px solid rgba(255,255,255,0.12)'};
+        ">
+          <span>🏅 #${p.rank} ${p.name}</span>
+          <span>${p.score}</span>
+        </div>
+      `).join('') || `
+        <div style="color:#FF6B6B;padding:12px 0;text-align:center;opacity:0.9;">
+          No scores submitted.
+        </div>
+      `;
+
+      leaderboardEl.innerHTML = `
+        <h2>FINAL RESULTS</h2>
+        ${rows}
+      `;
+    } catch (e) {
+      console.error(e);
+      leaderboardEl.innerHTML = `
+        <h2>FINAL RESULTS</h2>
+        <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
+          ⚠️ Error loading results.<br><br>
+          <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
+            🎮 NEW TOURNAMENT
+          </a>
+        </div>
+      `;
     }
-  </script>
+  }
+
+  // первый вызов сразу после загрузки
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      setInterval(loadState, 3000); // поллинг каждые 3 секунды
+    });
+  } else {
+    loadState();
+    setInterval(loadState, 3000);
+  }
+</script>
 </body>
 </html>
