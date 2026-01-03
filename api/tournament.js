@@ -3,17 +3,14 @@ import { put, list } from '@vercel/blob';
 
 const roomKey = (code) => `tournaments/${code}.json`;
 
-async function loadRoom(code) {
+aasync function loadRoom(code) {
   const key = roomKey(code);
   const blobs = await list({ prefix: key });
   const blob = blobs.blobs.find((b) => b.pathname === key);
   if (!blob) return null;
 
-  // пробуем downloadUrl, если есть, иначе url + ?download=1
-  const baseUrl = blob.downloadUrl || blob.url;
-  const url = baseUrl.includes('?') ? baseUrl : `${baseUrl}?download=1`;
-
-  const res = await fetch(url);
+  // ключевой момент: дергаем blob.url БЕЗ download=1
+  const res = await fetch(blob.url);
   const text = await res.text();
 
   try {
@@ -23,7 +20,7 @@ async function loadRoom(code) {
       'Failed to parse room JSON for',
       code,
       'from',
-      url,
+      blob.url,
       'got:',
       text.slice(0, 200)
     );
