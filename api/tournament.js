@@ -99,20 +99,10 @@ if (action === 'submit_score') {
     return res.status(400).json({ error: 'Missing playerName' });
   }
 
-  room.played = room.played || {};
-
-  // Если игрок уже сыграл — можно запретить обновление:
-  if (room.played[playerName]) {
-    // вариант 1: не даём переигрывать
-    return res.status(400).json({ error: 'Player already submitted score' });
-    // или просто не менять score и продолжить строить лидерборд
-  }
-
+  room.scores = room.scores || {};
   const prev = room.scores[playerName] || 0;
   const best = Math.max(prev, Number(score) || 0);
   room.scores[playerName] = best;
-
-  room.played[playerName] = true; // 👈 этот игрок сыграл свою игру
 
   const leaderboard = Object.entries(room.scores)
     .sort((a, b) => b[1] - a[1])
@@ -122,11 +112,8 @@ if (action === 'submit_score') {
       score: sc
     }));
 
-  // Проверяем, все ли сыграли
-  const allPlayed = room.players.every(p => room.played[p]);
-  if (allPlayed) {
-    room.status = 'finished';
-  }
+  // турнир заканчивается после первой успешной игры
+  room.status = 'finished';
 
   await saveRoom(room);
 
