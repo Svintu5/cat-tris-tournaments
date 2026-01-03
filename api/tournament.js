@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing code or action' });
     }
 
-    // 🔹 чтение комнаты
+    // 🔹 получить комнату
     if (action === 'get_room') {
       const url = `${BLOB_BASE}/${code}.json?download=1`;
       const resp = await fetch(url); // серверный fetch, CORS не мешает [web:248]
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    // 🔹 сохранение комнаты
+    // 🔹 сохранить комнату
     if (action === 'save_room') {
       if (!room) {
         return res.status(400).json({ error: 'Missing room' });
