@@ -2,7 +2,7 @@
 <html>
 <head>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <title>😻 Cat-tris GenLayer Edition</title>
+  <title>😻 Cat-tris Tournament Game</title>
   <meta charset="UTF-8">
   <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
   <style>
@@ -276,7 +276,6 @@
       margin-top: 2px;
     }
 
-    /* промо-бейдж под корпусом, справа */
     .promo {
       width: 380px;
       margin-top: 8px;
@@ -301,69 +300,43 @@
     .promo-text {
       font-weight: 600;
     }
-  /* ТУРНИРЫ */
-.tournaments-panel {
-  position: fixed; top: 20px; right: 20px; z-index: 999;
-  background: rgba(0,0,0,0.95); border: 2px solid #9B6AF6;
-  border-radius: 16px; padding: 20px; max-width: 300px;
-  backdrop-filter: blur(12px); font-size: 14px;
-  box-shadow: 0 20px 40px rgba(155,106,246,0.4);
-}
-.tournaments-panel input, .tournaments-panel button {
-  width: 100%; margin: 6px 0; padding: 12px; border-radius: 12px;
-  border: none; background: #9B6AF6; color: white; font-weight: 600;
-  font-family: inherit; cursor: pointer;
-}
-.tournaments-panel button:hover { background: #E37DF7; }
-.tournaments-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-.tab { flex: 1; padding: 8px; font-size: 13px; }
-.tab.active { background: #E37DF7; }
-#players { max-height: 160px; overflow: auto; background: rgba(0,0,0,0.6); 
-  padding: 12px; border-radius: 12px; margin: 12px 0; font-size: 13px; }
+
+    /* 🔥 НОВЫЕ СТИЛИ ДЛЯ ТУРНИРА */
+    .tournament-info {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.92);
+      border: 2px solid #00FF88;
+      border-radius: 18px;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #00FF88;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 12px #00FF88;
+      z-index: 1000;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 255, 136, 0.3);
+    }
+
+    .tournaments-panel { display: none !important; }
+    #landingPanel, #lobbyScreen, #tournaments { display: none !important; }
   </style>
 </head>
 <body>
+  <!-- 🔥 ТУРНИРНАЯ ИНФОРМАЦИЯ -->
+  <div class="tournament-info" id="tournamentInfo">
+    Loading tournament...
+  </div>
+
+  <!-- ОСНОВНОЙ ЭКРАН -->
   <div class="title-main">😻 CAT-TRIS 😻</div>
   <div class="hint-bar">
     ←→ Move | ↑ Rotate | ↓ Drop
   </div>
 
-  <!-- ЛЕНДИНГ ПАНЕЛЬ -->
-  <div id="landingPanel" style="
-    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.95); padding: 24px 32px; border-radius: 24px;
-    border: 3px solid #E37DF7; z-index: 999; backdrop-filter: blur(20px);
-    box-shadow: 0 20px 40px rgba(155,106,246,0.4); font-family: 'Switzer';">
-    
-    <div style="font-size: 18px; margin-bottom: 16px; color: #E37DF7; font-weight: 700;">
-      Tournament Edition
-    </div>
-    
-    <input id="landingPlayerName" placeholder="Enter your name" maxlength="12" style="
-      width: 220px; padding: 16px 20px; border: none; border-radius: 16px; 
-      font-size: 18px; font-weight: 600; text-align: center; margin-right: 12px;
-      background: rgba(255,255,255,0.95); color: #333;">
-      
-    <input id="landingRoomCode" placeholder="ABC123" maxlength="6" style="
-      width: 140px; padding: 16px 20px; border: none; border-radius: 16px; 
-      font-size: 18px; font-weight: 600; text-align: center; text-transform: uppercase;
-      background: rgba(255,255,255,0.95); color: #333; margin-right: 12px;">
-      
-    <button onclick="createNewTournament()" style="
-      padding: 16px 28px; background: linear-gradient(45deg, #00FF88, #00CC6A); 
-      color: #000; border: none; border-radius: 16px; font-size: 16px; font-weight: 700;
-      cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
-      🚀 CREATE
-    </button>
-    
-    <button onclick="joinExistingTournament()" style="
-      padding: 16px 28px; background: linear-gradient(45deg, #FF6B6B, #FF8E8E); 
-      color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 700;
-      cursor: pointer; text-transform: uppercase; letter-spacing: 1px;">
-      ⚡ JOIN
-    </button>
-  </div>
-    
   <div class="machine">
     <div class="device">
       <img src="img/hat.png" alt="" class="xmas-hat">
@@ -406,650 +379,335 @@
     </div>
   </div>
 
-  <!-- 🎮 ЛОББИ ЭКРАН (новый блок) -->
-<div id="lobbyScreen" style="
-  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; 
-  background: linear-gradient(135deg, #9B6AF6 0%, #E37DF7 100%);
-  display: none; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 1000; text-align: center; font-family: 'Switzer', sans-serif;">
-  
-  <h2 id="roomTitle" style="font-size: 48px; margin: 0 0 20px; color: #fff;">Room</h2>
-  
-  <div id="roomInfo" style="
-    font-size: 36px; font-weight: 800; color: #00FF88; 
-    background: rgba(0,255,136,0.2); padding: 20px 40px; 
-    border-radius: 24px; margin-bottom: 40px;">ABC123</div>
-  
-  <div id="playersList" style="
-    background: rgba(0,0,0,0.9); padding: 30px; border-radius: 24px; 
-    max-height: 300px; overflow: auto; max-width: 400px; font-size: 20px;
-    border: 2px solid #E37DF7;">Waiting for players...</div>
-  
-  <!-- КНОПКА START ТОЛЬКО ДЛЯ ХОСТА -->
-  <button id="startTournamentBtn" onclick="startTournamentFromLobby()" style="
-    display: none; padding: 24px 64px; margin-top: 40px; font-size: 28px; 
-    font-weight: 800; background: linear-gradient(45deg, #FFD700, #FFA500);
-    color: #000; border: none; border-radius: 32px; cursor: pointer;
-    box-shadow: 0 20px 40px rgba(255,215,0,0.4); text-transform: uppercase;">
-    🎮 START TOURNAMENT
-  </button>
-  
-  <!-- НАДПИСЬ ДЛЯ ИГРОКОВ -->
-  <div id="waitingMsg" class="waiting" style="
-    display: none; font-size: 24px; color: #FF6B6B; margin-top: 20px;
-    font-weight: 600; text-shadow: 0 0 10px rgba(255,107,107,0.5);">
-    ⏳ Waiting for host to start the tournament...
-  </div>
-</div>
-
-  
-  <!-- 🏆 ТУРНИРЫ -->
-<div id="tournaments" class="tournaments-panel" style="display: none;">
-  <button onclick="toggleTournaments()">🏆 TOURNAMENTS (T)</button>
-  
-  <div class="tournaments-tabs">
-    <button class="tab active" onclick="showTab('create')">CREATE</button>
-    <button class="tab" onclick="showTab('join')">JOIN</button>
-  </div>
-
-  <div id="createTab">
-    <input id="roomName" placeholder="Room name" value="Cat Battle">
-    <input id="duration" type="number" value="180" min="60" max="600"> sec
-    <button onclick="createRoom()">🚀 CREATE ROOM</button>
-  </div>
-
-  <div id="joinTab" style="display: none;">
-    <input id="roomCode" placeholder="ABC123" maxlength="6">
-    <input id="playerName" placeholder="Your name" value="Player">
-    <button onclick="joinRoom()">⚡ JOIN</button>
-  </div>
-
-  <div id="lobby" style="display: none;">
-    <div id="roomInfo" style="font-weight: 700; color: #E37DF7; text-align: center;"></div>
-    <div id="players">Waiting for players...</div>
-    <button id="startBtn" onclick="startTournament()">🎮 START TOURNAMENT</button>
-    <div id="countdown"></div>
-  </div>
-</div>
-
   <script>
-    const canvas = document.getElementById('game');
-const context = canvas.getContext('2d');
+    // 🔥 1. ЧИТАЕМ ПАРАМЕТРЫ ТУРНИРА ИЗ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+    const playerName = decodeURIComponent(urlParams.get('name') || 'Player');
+    const playerRole = urlParams.get('role') || 'player';
 
-// 🔥 НОВЫЕ ФУНКЦИИ ЛОББИ
-let currentRoom = null;
-let playerName = '';
+    if (!roomCode) {
+      document.getElementById('tournamentInfo').innerHTML = 
+        '❌ <a href="index.html">Go to lobby →</a>';
+      throw new Error('No room code provided');
+    }
 
-function showLobby(code, isHost = false) {
-  currentRoom = code;
-  document.getElementById('lobbyScreen').style.display = 'flex';
-  document.querySelector('.machine').style.display = 'none'; // скрываем тетрис
-  
-  // Настройка лобби
-  document.getElementById('roomTitle').textContent = `Room ${code}`;
-  document.getElementById('roomInfo').textContent = code;
-  document.getElementById('playersList').innerHTML = 'Host joined!<br>Waiting for players...';
-  
-  if (isHost) {
-    // ХОСТ видит кнопку START
-    document.getElementById('startTournamentBtn').style.display = 'block';
-    document.getElementById('waitingMsg').style.display = 'none';
-  } else {
-    // ИГРОКИ видят ожидание
-    document.getElementById('startTournamentBtn').style.display = 'none';
-    document.getElementById('waitingMsg').style.display = 'block';
-  }
-}
+    // 🔥 2. INIT SUPABASE
+    const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
 
-function startTournamentFromLobby() {
-  if (!currentRoom) return alert('❌ No room!');
-  
-  // Запускаем турнир
-  document.getElementById('lobbyScreen').style.display = 'none';
-  document.querySelector('.machine').style.display = 'flex';
-  
-  // ТВОЙ СТАРЫЙ КОД startTournament()
-  window.tetris.gameStarted = true;
-  if (window.tetris && window.tetris.playerReset) {
-    window.tetris.playerReset();
-  }
-}
-    
-// 🔥 ЛЕНДИНГ + ЛОББИ ЛОГИКА
-let currentRoomCode = null;
-let currentPlayerName = '';
-
-async function createNewTournament() {
-  currentPlayerName = document.getElementById('landingPlayerName').value || 'Host';
-  if (!currentPlayerName) return alert('❌ Enter your name!');
-  
-  const code = Math.random().toString(36).slice(2,6).toUpperCase();
-  currentRoomCode = code;
-  
-  try {
-    await window.supabaseClient.from('tournaments').insert({
-      code: code,
-      name: `${currentPlayerName}'s Tournament`,
-      duration: 180,
-      host: currentPlayerName
-    });
-    
-    alert(`✅ Room ${code} created! Share the code!`);
-    showLobby(code, true); // хост
-  } catch (err) {
-    alert('❌ Error creating room');
-  }
-}
-
-async function joinExistingTournament() {
-  currentPlayerName = document.getElementById('landingPlayerName').value || 'Player';
-  const code = document.getElementById('landingRoomCode').value.toUpperCase();
-  
-  if (!currentPlayerName) return alert('❌ Enter your name!');
-  if (!code) return alert('❌ Enter room code!');
-  
-  try {
-    const { data, error } = await window.supabaseClient
-      .from('tournaments').select('*').eq('code', code).single();
-    
-    if (error || !data) return alert('❌ Room not found!');
-    
-    currentRoomCode = code;
-    alert(`✅ Joined room ${code}!`);
-    showLobby(code, false); // игрок
-  } catch (err) {
-    alert('❌ Connection error!');
-  }
-}    
-    
-// Ждём Supabase CDN
-function initSupabase() {
-  if (typeof supabase === 'undefined') {
-    setTimeout(initSupabase, 100);
-    return;
-  }
-  
-  const { createClient } = supabase;
-  const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
-  
-  window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window.tournament = {
-    channel: null, currentRoom: null, timeLeft: 0, 
-    playerName: 'Anonymous', leaderboard: {}
-  };
-  
-  // Запускаем тетрис ПОСЛЕ Supabase
-  initTetris();
-}
-
-function initTetris() {
-  
-    // фон с логотипом
-    const logoBg = new Image();
-    let logoBgReady = false;
-    logoBg.src = 'img/logo.png';
-    logoBg.onload = () => { logoBgReady = true; };
-  
-    const CELL_SIZE = 24;
-    const CELL_HEIGHT = 24;
-
-    const CAT_IMAGES = [];
-    const CAT_SRC = [
-      'img/cat1.png',
-      'img/cat2.png',
-      'img/cat3.png',
-      'img/cat4.png',
-      'img/cat5.png',
-      'img/cat6.png',
-      'img/cat7.png',
-    ];
-
-    let imagesLoaded = 0;
-
-    CAT_SRC.forEach((src, i) => {
-      const img = new Image();
-      img.src = src;
-      img.onload = () => {
-        imagesLoaded++;
+    async function initSupabase() {
+      if (typeof supabase === 'undefined') {
+        setTimeout(initSupabase, 100);
+        return;
+      }
+      
+      const { createClient } = supabase;
+      window.supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      
+      // 🔥 ПОКАЗЫВАЕМ ТУРНИРНУЮ ИНФОРМАЦИЮ
+      document.getElementById('tournamentInfo').textContent = 
+        `ROOM: ${roomCode.toUpperCase()} | ${playerName} (${playerRole.toUpperCase()})`;
+      
+      window.tournament = {
+        currentRoom: roomCode,
+        playerName: playerName,
+        leaderboard: {},
+        timeLeft: 180
       };
-      CAT_IMAGES[i] = img;
-    });
-
-    const arena = createMatrix(10, 15);
-
-    let player = { pos: { x: 0, y: 0 }, matrix: null, score: 0 };
-    let dropCounter = 0;
-    let dropInterval = 800;
-    let lastTime = 0;
-
-    let fastDrop = false;
-
-    const SPEED_STEP = 0.95;
-    const MIN_DROP_INTERVAL = 120;
-
-let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
-
-let gameStarted = false;
-let gameOver = false;
-
-// 🔥 ГЛОБАЛЬНЫЙ ДОСТУП — ПОСЛЕ объявления переменных!
-window.tetris = {
-  gameStarted: false,
-  playerReset: null,
-  updateScore: null,
-  player: null
-};
-const startOverlay = document.getElementById('startOverlay');
-
-    function createMatrix(w, h) {
-      const matrix = [];
-      while (h--) matrix.push(new Array(w).fill(0));
-      return matrix;
+      
+      // 🔥 ЗАПУСК ТЕТРИСА
+      initTetris();
     }
 
-    function createPiece(type) {
-      if (type === 'T') return [[0,0,0],[1,1,1],[0,1,0]];
-      if (type === 'O') return [[2,2],[2,2]];
-      if (type === 'L') return [[0,3,0],[0,3,0],[0,3,3]];
-      if (type === 'J') return [[0,4,0],[0,4,0],[4,4,0]];
-      if (type === 'I') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]];
-      if (type === 'S') return [[0,6,6],[6,6,0],[0,0,0]];
-      if (type === 'Z') return [[7,7,0],[0,7,7],[0,0,0]];
-    }
+    // 🔥 3. ТВОЙ ТЕТРИС (полная копия из оригинала)
+    function initTetris() {
+      const canvas = document.getElementById('game');
+      const context = canvas.getContext('2d');
 
-    function collide(arena, player) {
-      const [m, o] = [player.matrix, player.pos];
-      for (let y = 0; y < m.length; ++y) {
-        for (let x = 0; x < m[y].length; ++x) {
-          if (m[y][x] !== 0 &&
-             (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
-            return true;
+      const logoBg = new Image();
+      let logoBgReady = false;
+      logoBg.src = 'img/logo.png';
+      logoBg.onload = () => { logoBgReady = true; };
+
+      const CELL_SIZE = 24;
+      const CELL_HEIGHT = 24;
+
+      const CAT_IMAGES = [];
+      const CAT_SRC = [
+        'img/cat1.png','img/cat2.png','img/cat3.png','img/cat4.png',
+        'img/cat5.png','img/cat6.png','img/cat7.png'
+      ];
+
+      let imagesLoaded = 0;
+      CAT_SRC.forEach((src, i) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => { imagesLoaded++; };
+        CAT_IMAGES[i] = img;
+      });
+
+      const arena = createMatrix(10, 15);
+      let player = { pos: { x: 0, y: 0 }, matrix: null, score: 0 };
+      let dropCounter = 0;
+      let dropInterval = 800;
+      let lastTime = 0;
+      let fastDrop = false;
+      const SPEED_STEP = 0.95;
+      const MIN_DROP_INTERVAL = 120;
+      let topScore = parseInt(localStorage.getItem('cattris_top_score') || '0');
+      let gameStarted = false;
+      let gameOver = false;
+
+      window.tetris = { gameStarted: false, playerReset: null, updateScore: null, player: null };
+      const startOverlay = document.getElementById('startOverlay');
+
+      function createMatrix(w, h) {
+        const matrix = [];
+        while (h--) matrix.push(new Array(w).fill(0));
+        return matrix;
+      }
+
+      function createPiece(type) {
+        if (type === 'T') return [[0,0,0],[1,1,1],[0,1,0]];
+        if (type === 'O') return [[2,2],[2,2]];
+        if (type === 'L') return [[0,3,0],[0,3,0],[0,3,3]];
+        if (type === 'J') return [[0,4,0],[0,4,0],[4,4,0]];
+        if (type === 'I') return [[0,5,0,0],[0,5,0,0],[0,5,0,0],[0,5,0,0]];
+        if (type === 'S') return [[0,6,6],[6,6,0],[0,0,0]];
+        if (type === 'Z') return [[7,7,0],[0,7,7],[0,0,0]];
+      }
+
+      function collide(arena, player) {
+        const [m, o] = [player.matrix, player.pos];
+        for (let y = 0; y < m.length; ++y) {
+          for (let x = 0; x < m[y].length; ++x) {
+            if (m[y][x] !== 0 && (arena[y + o.y] && arena[y + o.y][x + o.x]) !== 0) {
+              return true;
+            }
           }
         }
+        return false;
       }
-      return false;
-    }
 
-    function merge(arena, player) {
-      player.matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-          if (value !== 0) {
-            arena[y + player.pos.y][x + player.pos.x] = value;
-          }
+      function merge(arena, player) {
+        player.matrix.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value !== 0) {
+              arena[y + player.pos.y][x + player.pos.x] = value;
+            }
+          });
         });
-      });
-    }
+      }
 
-    function drawMatrix(matrix, offset) {
-      if (!matrix) return;
-      matrix.forEach((row, y) => {
-        row.forEach((value, x) => {
-          if (value !== 0 && imagesLoaded === CAT_SRC.length) {
-            const imgIndex = (value - 1) % CAT_IMAGES.length;
-            const img = CAT_IMAGES[imgIndex];
-            if (!img) return;
-            const px = (x + offset.x) * CELL_SIZE;
-            const py = (y + offset.y) * CELL_HEIGHT;
-            context.drawImage(img, px, py, CELL_SIZE, CELL_HEIGHT);
-          }
+      function drawMatrix(matrix, offset) {
+        if (!matrix) return;
+        matrix.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value !== 0 && imagesLoaded === CAT_SRC.length) {
+              const imgIndex = (value - 1) % CAT_IMAGES.length;
+              const img = CAT_IMAGES[imgIndex];
+              if (!img) return;
+              const px = (x + offset.x) * CELL_SIZE;
+              const py = (y + offset.y) * CELL_HEIGHT;
+              context.drawImage(img, px, py, CELL_SIZE, CELL_HEIGHT);
+            }
+          });
         });
-      });
-    }
-
-    function draw() {
-      context.fillStyle = '#000000';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
-      const scaleX = canvas.width / (arena[0].length * CELL_SIZE);
-      const scaleY = canvas.height / (arena.length * CELL_HEIGHT);
-      const scale = Math.min(scaleX, scaleY);
-
-      context.save();
-      context.scale(scale, scale);
-
-      if (logoBgReady) {
-        context.globalAlpha = 0.22;
-        context.drawImage(
-          logoBg,
-          0, 0,
-          arena[0].length * CELL_SIZE,
-          arena.length * CELL_HEIGHT
-        );
-        context.globalAlpha = 1;
       }
 
-      drawMatrix(arena, { x: 0, y: 0 });
+      function draw() {
+        context.fillStyle = '#000000';
+        context.fillRect(0, 0, canvas.width, canvas.height);
 
-      if (gameStarted && player.matrix) {
-        drawMatrix(player.matrix, player.pos);
-      }
+        const scaleX = canvas.width / (arena[0].length * CELL_SIZE);
+        const scaleY = canvas.height / (arena.length * CELL_HEIGHT);
+        const scale = Math.min(scaleX, scaleY);
 
-      context.restore();
-    }
+        context.save();
+        context.scale(scale, scale);
 
-    function arenaSweep() {
-      let rowCount = 1;
-      outer: for (let y = arena.length - 1; y > 0; --y) {
-        for (let x = 0; x < arena[y].length; ++x) {
-          if (arena[y][x] === 0) continue outer;
+        if (logoBgReady) {
+          context.globalAlpha = 0.22;
+          context.drawImage(logoBg, 0, 0, arena[0].length * CELL_SIZE, arena.length * CELL_HEIGHT);
+          context.globalAlpha = 1;
         }
-        const row = arena.splice(y, 1)[0].fill(0);
-        arena.unshift(row);
-        ++y;
-        player.score += rowCount * 10;
-        rowCount *= 2;
 
-        dropInterval = Math.max(MIN_DROP_INTERVAL, dropInterval * SPEED_STEP);
+        drawMatrix(arena, { x: 0, y: 0 });
+        if (gameStarted && player.matrix) drawMatrix(player.matrix, player.pos);
+        context.restore();
       }
-      updateScore();
-    }
 
-    function playerDrop() {
-      player.pos.y++;
-      if (collide(arena, player)) {
-        player.pos.y--;
-        merge(arena, player);
-        playerReset();
-        arenaSweep();
+      function arenaSweep() {
+        let rowCount = 1;
+        outer: for (let y = arena.length - 1; y > 0; --y) {
+          for (let x = 0; x < arena[y].length; ++x) {
+            if (arena[y][x] === 0) continue outer;
+          }
+          const row = arena.splice(y, 1)[0].fill(0);
+          arena.unshift(row);
+          ++y;
+          player.score += rowCount * 10;
+          rowCount *= 2;
+          dropInterval = Math.max(MIN_DROP_INTERVAL, dropInterval * SPEED_STEP);
+        }
         updateScore();
       }
-      dropCounter = 0;
-    }
 
-    function playerMove(dir) {
-      player.pos.x += dir;
-      if (collide(arena, player)) player.pos.x -= dir;
-    }
-
-    function playerReset() {
-      const pieces = 'TJLOSZI';
-      player.matrix = createPiece(pieces[(pieces.length * Math.random()) | 0]);
-      player.pos.y = 0;
-      player.pos.x =
-        (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
-      if (collide(arena, player)) {
-        arena.forEach(row => row.fill(0));
-        player.score = 0;
-        dropInterval = 800;
-
-        gameStarted = false;
-        gameOver = true;
-        startOverlay.textContent = 'Game Over Press Enter';
-        startOverlay.style.display = 'block';
+      function playerDrop() {
+        player.pos.y++;
+        if (collide(arena, player)) {
+          player.pos.y--;
+          merge(arena, player);
+          playerReset();
+          arenaSweep();
+          updateScore();
+        }
+        dropCounter = 0;
       }
-            // Синхронизация с глобальным объектом
-      window.tetris.gameStarted = gameStarted;
-      window.tetris.playerReset = playerReset;
-      window.tetris.player = player;
-    }
 
-    function playerRotate(dir) {
-      let offset = 1;
-      rotate(player.matrix, dir);
-      while (collide(arena, player)) {
-        player.pos.x += offset;
-        offset = -(offset | -offset);
+      function playerMove(dir) {
+        player.pos.x += dir;
+        if (collide(arena, player)) player.pos.x -= dir;
       }
-    }
 
-    function rotate(matrix, dir) {
-      for (let y = 0; y < matrix.length; ++y) {
-        for (let x = 0; x < y; ++x) {
-          [matrix[x][y], matrix[y][x]] =
-            [matrix[y][x], matrix[x][y]];
+      function playerReset() {
+        const pieces = 'TJLOSZI';
+        player.matrix = createPiece(pieces[(pieces.length * Math.random()) | 0]);
+        player.pos.y = 0;
+        player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
+        if (collide(arena, player)) {
+          arena.forEach(row => row.fill(0));
+          player.score = 0;
+          dropInterval = 800;
+          gameStarted = false;
+          gameOver = true;
+          startOverlay.textContent = 'Game Over Press Enter';
+          startOverlay.style.display = 'block';
+        }
+        window.tetris.gameStarted = gameStarted;
+        window.tetris.playerReset = playerReset;
+        window.tetris.player = player;
+      }
+
+      function playerRotate(dir) {
+        let offset = 1;
+        rotate(player.matrix, dir);
+        while (collide(arena, player)) {
+          player.pos.x += offset;
+          offset = -(offset | -offset);
         }
       }
-      if (dir > 0) matrix.forEach(row => row.reverse());
-      else matrix.reverse();
-    }
 
-    function update(time = 0) {
-      if (!gameStarted) {
+      function rotate(matrix, dir) {
+        for (let y = 0; y < matrix.length; ++y) {
+          for (let x = 0; x < y; ++x) {
+            [matrix[x][y], matrix[y][x]] = [matrix[y][x], matrix[x][y]];
+          }
+        }
+        if (dir > 0) matrix.forEach(row => row.reverse());
+        else matrix.reverse();
+      }
+
+      function update(time = 0) {
+        if (!gameStarted) {
+          draw();
+          requestAnimationFrame(update);
+          return;
+        }
+        const deltaTime = time - lastTime;
+        lastTime = time;
+        dropCounter += deltaTime;
+        let currentInterval = dropInterval;
+        if (fastDrop) currentInterval = dropInterval * 0.15;
+        if (dropCounter > currentInterval) playerDrop();
         draw();
         requestAnimationFrame(update);
-        return;
-      }
-      const deltaTime = time - lastTime;
-lastTime = time;
-dropCounter += deltaTime;
-
-let currentInterval = dropInterval;
-if (fastDrop) {
-  currentInterval = dropInterval * 0.15; // во много раз быстрее
-}
-
-if (dropCounter > currentInterval) playerDrop();
-      draw();
-      requestAnimationFrame(update);
-    }
-
-    function updateScore() {
-      document.getElementById('score').textContent = player.score;
-
-      if (player.score > topScore) {
-        topScore = player.score;
-        localStorage.setItem('cattris_top_score', topScore);
-      }
-      document.getElementById('topScore').textContent = topScore;
-
-      // Синхронизация
-      window.tetris.updateScore = updateScore;
-      if (window.tournament && window.tournament.currentRoom) {
-        window.tournament.leaderboard[window.tournament.playerName] = player.score;
-      }
-    }
-
-    function handleAction(action) {
-      if (action === 'start') {
-        gameOver = false;
-        gameStarted = true;
-        startOverlay.style.display = 'none';
-        startOverlay.textContent = 'Press Enter to start';
-        arena.forEach(row => row.fill(0));
-        player.score = 0;
-        dropInterval = 800;
-        playerReset();
-        lastTime = 0;
-        updateScore();
-        return;
       }
 
-      if (!gameStarted) return;
+      function updateScore() {
+        document.getElementById('score').textContent = player.score;
+        if (player.score > topScore) {
+          topScore = player.score;
+          localStorage.setItem('cattris_top_score', topScore);
+        }
+        document.getElementById('topScore').textContent = topScore;
+        window.tetris.updateScore = updateScore;
+        if (window.tournament) {
+          window.tournament.leaderboard[window.tournament.playerName] = player.score;
+        }
+      }
 
-      if (action === 'left') playerMove(-1);
-      if (action === 'right') playerMove(1);
-      if (action === 'down') playerDrop();
-      if (action === 'up') playerRotate(1);
+      function handleAction(action) {
+        if (action === 'start') {
+          gameOver = false;
+          gameStarted = true;
+          startOverlay.style.display = 'none';
+          startOverlay.textContent = 'Press Enter to start';
+          arena.forEach(row => row.fill(0));
+          player.score = 0;
+          dropInterval = 800;
+          playerReset();
+          lastTime = 0;
+          updateScore();
+          return;
+        }
+        if (!gameStarted) return;
+        if (action === 'left') playerMove(-1);
+        if (action === 'right') playerMove(1);
+        if (action === 'down') playerDrop();
+        if (action === 'up') playerRotate(1);
+        window.tetris.gameStarted = gameStarted;
+      }
 
-      // Синхронизация состояния игры
+      // КОНТРОЛЛЕРЫ
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          handleAction('start');
+          return;
+        }
+        if (!gameStarted) return;
+        if (event.keyCode === 37) handleAction('left');
+        else if (event.keyCode === 39) handleAction('right');
+        else if (event.keyCode === 40) handleAction('down');
+        else if (event.keyCode === 38) handleAction('up');
+      });
+
+      document.querySelectorAll('[data-action]').forEach(btn => {
+        const action = btn.getAttribute('data-action');
+        const press = e => {
+          e.preventDefault();
+          if (action === 'down') fastDrop = true;
+          else handleAction(action);
+          btn.classList.add('pressed');
+        };
+        const release = e => {
+          e.preventDefault();
+          if (action === 'down') fastDrop = false;
+          btn.classList.remove('pressed');
+        };
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+        btn.addEventListener('touchstart', press);
+        btn.addEventListener('touchend', release);
+      });
+
       window.tetris.gameStarted = gameStarted;
+      playerReset();
+      updateScore();
+      update();
     }
 
-    document.addEventListener('keydown', event => {
-      if (event.key === 'Enter') {
-        handleAction('start');
-        return;
+    // 🔥 ЗАПУСК
+    initSupabase();
+
+    // 🔥 АВТОСТАРТ ИГРЫ через 2 секунды
+    setTimeout(() => {
+      if (window.tetris && !window.tetris.gameStarted) {
+        document.querySelector('[data-action="start"]').click();
       }
-
-      if (!gameStarted) return;
-
-      if (event.keyCode === 37) handleAction('left');
-      else if (event.keyCode === 39) handleAction('right');
-      else if (event.keyCode === 40) handleAction('down');
-      else if (event.keyCode === 38) handleAction('up');
-    });
-
-document.querySelectorAll('[data-action]').forEach(btn => {
-  const action = btn.getAttribute('data-action');
-
-  const press = e => {
-    e.preventDefault();
-    if (action === 'down') {
-      fastDrop = true;       // при удержании ▼ ускоряем
-    } else {
-      handleAction(action);
-    }
-    btn.classList.add('pressed');
-  };
-
-  const release = e => {
-    e.preventDefault();
-    if (action === 'down') {
-      fastDrop = false;      // отпустили ▼ — снова обычная скорость
-    }
-    btn.classList.remove('pressed');
-  };
-
-  btn.addEventListener('mousedown', press);
-  btn.addEventListener('mouseup', release);
-  btn.addEventListener('mouseleave', release);
-  btn.addEventListener('touchstart', press);
-  btn.addEventListener('touchend', release);
-});
-
-  // 🔥 Финальная синхронизация
-window.tetris.gameStarted = gameStarted;
-  
-playerReset();
-updateScore();
-update();
-}
-    
-// --- UI турнира ---
-
-function toggleTournaments() {
-  const panel = document.getElementById('tournaments');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-}
-
-function showTab(tab) {
-  const tabs = document.querySelectorAll('.tab');
-  tabs.forEach(btn => btn.classList.remove('active'));
-  // event.target работает только из onclick в HTML
-  // поэтому ориентируемся на id
-  document.querySelector(
-    tab === 'create' ? '.tab:nth-child(1)' : '.tab:nth-child(2)'
-  ).classList.add('active');
-
-  document.getElementById('createTab').style.display = tab === 'create' ? 'block' : 'none';
-  document.getElementById('joinTab').style.display = tab === 'join' ? 'block' : 'none';
-}
-
-// горячая клавиша T
-document.addEventListener('keydown', e => {
-  if (e.key.toLowerCase() === 't') {
-    toggleTournaments();
-  }
-});
-
-    // CREATE комнаты
-async function createRoom() {
-  const name = document.getElementById('roomName').value || 'Cat Battle';
-  const duration = parseInt(document.getElementById('duration').value) || 180;
-  const code = Math.random().toString(36).slice(2,6).toUpperCase();
-  
-  try {
-    const { error } = await window.supabaseClient.from('tournaments').insert({
-      code: code,
-      name: name,
-      duration: duration
-    });
-    
-    if (error) {
-      alert('❌ Error: ' + error.message);
-      return;
-    }
-    
-    window.tournament.currentRoom = { code, name, duration };
-    window.tournament.playerName = 'Host';
-    
-    document.getElementById('roomInfo').textContent = `Room: ${code} ✅`;
-    document.getElementById('lobby').style.display = 'block';
-    document.getElementById('players').textContent = 'Host: 0';
-    
-    alert(`✅ Room ${code} created! Share the code!`);
-  } catch (err) {
-    alert('❌ Connection error: ' + err.message);
-  }
-}
-async function joinRoom() {
-  const code = document.getElementById('roomCode').value.toUpperCase();
-  window.tournament.playerName = document.getElementById('playerName').value || 'Anonymous';
-  
-  if (!code) {
-    alert('❌ Enter room code!');
-    return;
-  }
-  
-  try {
-    const { data, error } = await window.supabaseClient
-      .from('tournaments')
-      .select('*')
-      .eq('code', code)
-      .single();
-    
-    if (error || !data) {
-      alert('❌ Room not found!');
-      return;
-    }
-    
-    window.tournament.currentRoom = data;
-    document.getElementById('roomInfo').textContent = `Room: ${code}`;
-    document.getElementById('lobby').style.display = 'block';
-    updateLeaderboard();
-  } catch (err) {
-    alert('❌ Connection error!');
-  }
-}
-  
-  // START турнира + лидерборд
-function startTournament() {
-  if (!window.tournament.currentRoom) {
-    alert('❌ Create or join room first!');
-    return;
-  }
-  
-  window.tournament.timeLeft = window.tournament.currentRoom.duration || 180;
-  
-  const timer = setInterval(() => {
-    window.tournament.timeLeft--;
-    document.getElementById('countdown').textContent = 
-      `${Math.floor(window.tournament.timeLeft/60)}:${(window.tournament.timeLeft%60).toString().padStart(2,'0')}`;
-
-        if (window.tetris && window.tetris.gameStarted) {
-      window.tournament.leaderboard[window.tournament.playerName] = 
-        window.tetris.player ? window.tetris.player.score : 0;
-      updateLeaderboard();
-    }
-    
-    if (window.tournament.timeLeft <= 0) {
-      clearInterval(timer);
-      const winner = Object.entries(window.tournament.leaderboard)
-        .sort(([,a], [,b]) => b - a)[0];
-      alert('🏆 FINISHED!\n' + (winner ? `${winner[0]}: ${winner[1]}` : 'No players'));
-      document.getElementById('tournaments').style.display = 'block';
-      window.tournament.leaderboard = {};
-      updateLeaderboard();
-    }
-  }, 1000);
-  
-  document.getElementById('tournaments').style.display = 'none';
-  window.tetris.gameStarted = true;
-  if (window.tetris && window.tetris.playerReset) {
-  window.tetris.playerReset();
-}
-}
-function updateLeaderboard() {
-  const playersDiv = document.getElementById('players');
-  const sorted = Object.entries(window.tournament.leaderboard)
-    .sort(([,a], [,b]) => b - a);
-  playersDiv.innerHTML = sorted.map(([name, score]) => 
-    `${name}: ${score}`
-  ).join('<br>') || 'Waiting for players...';
-}
-
-initSupabase();
+    }, 2000);
   </script>
 </body>
 </html>
