@@ -391,25 +391,27 @@
       throw new Error('No room code provided');
     }
 
-  // 🔥 ГЛОБАЛЬНЫЙ SUPABASE КЛИЕНТ
+   // 🔥 ГЛОБАЛЬНЫЕ КОНСТАНТЫ (ОДИН РАЗ)
   const SUPABASE_URL = 'https://lsdwavmfkbfrnbmeqiov.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxzZHdhdm1ma2Jmcm5ibWVxaW92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwNzgxMTUsImV4cCI6MjA4MjY1NDExNX0.umbN5OiY95pZMymq3ufuD-jdKdobLScgqqj-57QtU8Y';
 
-  let supabaseClient = null;
-
-  // 🔥 ПАРАМЕТРЫ ИЗ URL
+  // 🔥 ПАРАМЕТРЫ URL (ОДИН РАЗ В НАЧАЛЕ!)
   const urlParams = new URLSearchParams(window.location.search);
   const roomCode = urlParams.get('room');
   const playerName = decodeURIComponent(urlParams.get('name') || 'Player');
   const playerRole = urlParams.get('role') || 'player';
 
+  let supabaseClient = null;
+  let scoreInterval = null;
+
+  // Проверка roomCode
   if (!roomCode) {
     document.querySelector('.tournament-info').innerHTML = 
       '❌ <a href="index.html" style="color: #FF6B6B;">Go to lobby →</a>';
     throw new Error('No room code provided');
   }
 
-  // 🔥 ИНИЦИАЛИЗАЦИЯ SUPABASE
+  // 🔥 Supabase Инициализация
   async function initSupabase() {
     if (typeof supabase === 'undefined') {
       setTimeout(initSupabase, 100);
@@ -422,7 +424,7 @@
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     window.supabaseClient = supabaseClient;
 
-    // ✅ ПОКАЗЫВАЕМ ТУРНИРНУЮ ИНФОРМАЦИЮ
+    // ✅ Турнирная информация
     const tourneyInfo = document.querySelector('.tournament-info');
     if (tourneyInfo) {
       tourneyInfo.style.display = 'block';
@@ -432,16 +434,19 @@
       `;
     }
 
-    // 🔥 ЛИДЕРБОРД (только для хоста)
+    // 🔥 Лидерборд только для хоста
     if (playerRole === 'host') {
       createLiveLeaderboard();
     }
 
-    // 🔥 ЗАПУСК ТЕТРИСА
+    // 🔥 Запуск тетриса
     initTetris();
+    
+    // 🔥 Синхронизация очков
+    startScoreSync();
   }
 
-  // 🔥 ЖИВОЙ ЛИДЕРБОРД (только для хоста)
+  // 🔥 Живой лидерборд (ТОЛЬКО ХОСТ)
   function createLiveLeaderboard() {
     const screen = document.querySelector('.screen');
     const leaderboard = document.createElement('div');
@@ -453,14 +458,12 @@
       box-shadow: 0 8px 32px rgba(255,215,0,0.3); overflow-y: auto;
       font-family: 'Switzer', sans-serif;
     `;
-    leaderboard.innerHTML = '<div style="color: #888;">Loading leaderboard...</div>';
+    leaderboard.innerHTML = '<div style="color: #888;">Loading...</div>';
     screen.style.position = 'relative';
     screen.appendChild(leaderboard);
 
-    // ✅ ИСПРАВЛЕННАЯ ФУНКЦИЯ ЛИДЕРБОРДА
-    window.updateLiveLeaderboard = async function() {
-      if (!supabaseClient || !roomCode) return;
-      
+    window.updateLiveLeaderboard = async () => {
+      if (!supabaseClient) return;
       try {
         const { data: scores } = await supabaseClient
           .from('tournament_scores')
@@ -476,7 +479,7 @@
             <div style="font-weight: 800; color: #FFD700; margin-bottom: 12px; font-size: 16px;">
               🏆 LIVE (${scores.length})
             </div>
-            ${scores.map((s, i) => `
+            ${scores.slice(0, 8).map((s, i) => `
               <div style="padding: 6px 0; display: flex; justify-content: space-between; 
                 ${i === 0 ? 'color: #FFD700; font-weight: bold; text-shadow: 0 0 8px #FFD700;' : ''}">
                 <span>${i+1}. ${s.player_name}</span>
@@ -484,38 +487,27 @@
               </div>
             `).join('')}
           `;
-        } else {
-          lb.innerHTML = '<div style="color: #888;">No players yet...</div>';
         }
-      } catch (error) {
-        console.log('Leaderboard error:', error);
-        const lb = document.getElementById('liveLeaderboard');
-        if (lb) lb.innerHTML = '<div style="color: #FF6B6B;">Leaderboard error</div>';
+      } catch (e) {
+        console.log('Leaderboard error:', e);
       }
     };
 
-    // Обновление каждые 2 сек
     setInterval(window.updateLiveLeaderboard, 2000);
     setTimeout(window.updateLiveLeaderboard, 1000);
   }
 
-  // 🔥 МУЛЬТИПЛЕЕР: отправка очков
-  function initMultiplayer() {
-    window.tournamentRoom = roomCode;
-    window.tournamentPlayer = playerName;
-    
-    setInterval(async () => {
+  // 🔥 Синхронизация очков
+  function startScoreSync() {
+    if (scoreInterval) clearInterval(scoreInterval);
+    scoreInterval = setInterval(async () => {
       if (window.tetris?.player?.score !== undefined && supabaseClient) {
         try {
-          await supabaseClient
-            .from('tournament_scores')
-            .upsert({ 
-              room_code: roomCode, 
-              player_name: playerName, 
-              score: window.tetris.player.score 
-            }, { 
-              onConflict: 'room_code,player_name' 
-            });
+          await supabaseClient.from('tournament_scores').upsert({
+            room_code: roomCode,
+            player_name: playerName,
+            score: window.tetris.player.score
+          }, { onConflict: 'room_code,player_name' });
         } catch (e) {
           console.log('Score sync error:', e);
         }
@@ -885,6 +877,15 @@ async function updateLiveLeaderboard() {
         initMultiplayer();
       }
     }, 3000);
+
+      // 🔥 ESC для хоста → результаты
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && playerRole === 'host') {
+      if (confirm('🏁 Завершить турнир и показать результаты?')) {
+        window.location.href = `tournament-end.html?room=${roomCode}`;
+      }
+    }
+  });
   </script>
 </body>
 </html>
