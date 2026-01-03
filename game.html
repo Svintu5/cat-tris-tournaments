@@ -451,11 +451,31 @@ document.querySelector('.tournament-info').innerHTML =
 
 // Кнопка START турнира (только хост)
 if (playerRole === 'host') {
-  document.getElementById('startTournamentBtn').style.display = 'block';
-  document.getElementById('startTournamentBtn').onclick = () => {
-    if (confirm('🚀 НАЧАТЬ ТУРНИР?')) {
+  const btn = document.getElementById('startTournamentBtn');
+  btn.style.display = 'block';
+  btn.onclick = async () => {
+    if (!confirm('🚀 НАЧАТЬ ТУРНИР?')) return;
+
+    try {
+      const res = await fetch('/api/tournament', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          code: roomCode,
+          action: 'start'
+        })
+      });
+      const data = await res.json();
+      if (data.error) {
+        alert('❌ ' + data.error);
+        return;
+      }
+
       document.getElementById('status').textContent = '🏁 Турнир начат!';
-      document.getElementById('startTournamentBtn').classList.add('tournament-started');
+      btn.classList.add('tournament-started');
+    } catch (e) {
+      console.error(e);
+      alert('❌ Failed to start tournament');
     }
   };
 }
