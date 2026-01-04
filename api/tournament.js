@@ -1,4 +1,4 @@
-// api/tournament.js - РАБОЧАЯ ВЕРСИЯ
+// api/tournament.js - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ
 import { put } from '@vercel/blob';
 
 const roomKey = (code) => `tournaments/${code}.json`;
@@ -37,12 +37,8 @@ export default async function handler(req, res) {
     // 🔹 ПРОВЕРИТЬ СУЩЕСТВОВАНИЕ КОМНАТЫ
     if (action === 'check_exists') {
       const url = `${BLOB_BASE}/${code}.json`;
-      try {
-        const resp = await fetch(url, { method: 'HEAD' });
-        return res.json({ exists: resp.ok });
-      } catch {
-        return res.json({ exists: false });
-      }
+      const resp = await fetch(url, { method: 'HEAD' });
+      return res.json({ exists: resp.ok });
     }
 
     // 🔹 СОХРАНИТЬ КОМНАТУ
@@ -125,6 +121,7 @@ export default async function handler(req, res) {
       room.scores[cleanName] = 0;
       room.played[cleanName] = false;
 
+      // Сохранить
       await put(roomKey(code), JSON.stringify(room, null, 2), {
         contentType: 'application/json',
         access: 'public',
@@ -177,6 +174,11 @@ export default async function handler(req, res) {
         cacheControlMaxAge: 0,
         allowOverwrite: true,
       });
+
+      return res.json({ ok: true, room });
+    }
+
+    // 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
     if (action === 'submit_score') {
       if (!playerName) {
         return res.status(400).json({ error: 'Missing playerName' });
@@ -228,6 +230,13 @@ export default async function handler(req, res) {
         cacheControlMaxAge: 0,
         allowOverwrite: true,
       });
+
+      return res.json({ 
+        ok: true, 
+        room,
+        tournamentFinished: allPlayed 
+      });
+    }
 
     return res.status(400).json({ error: 'Unknown action' });
 
