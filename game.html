@@ -577,47 +577,6 @@ window.sendScore = async (finalScore) => {
   }
 };
 
-    room.scores = room.scores || {};
-    room.played = room.played || {};
-
-    const prev = room.scores[playerName] || 0;
-    room.scores[playerName] = Math.max(prev, Number(finalScore) || 0);
-    room.played[playerName] = true;
-
-    const allDone = room.players.every(name => room.played?.[name]);
-    room.status = allDone ? 'finished' : 'started';
-
-    await saveRoom(room);
-
-    const leaderboardArr = Object.entries(room.scores)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, sc], index) => ({
-        rank: index + 1,
-        name,
-        score: sc
-      }));
-
-    document.getElementById('leaderboard').innerHTML =
-      leaderboardArr.map(p =>
-        `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
-           🏅 #${p.rank} ${p.name}: ${p.score}
-         </div>`
-      ).join('');
-
-    if (room.status === 'finished') {
-      document.getElementById('status').textContent = '🏁 Турнир завершён!';
-      setTimeout(() => {
-        window.location.href =
-          `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
-      }, 1500);
-    } else {
-      document.getElementById('status').textContent = '✅ Результат сохранён';
-    }
-  } catch (e) {
-    console.error('Tournament error:', e);
-  }
-};
-
 // ТЕТРИС ИГРА
     const canvas = document.getElementById('game');
     const context = canvas.getContext('2d');
