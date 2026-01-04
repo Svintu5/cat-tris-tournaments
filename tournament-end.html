@@ -275,8 +275,7 @@
 
         html += `
           <div class="actions">
-            <button class="new-game-btn" onclick="playAgain()">🎮 Play Again</button>
-            <button class="lobby-btn" onclick="goToLobby()">🏠 Lobby</button>
+            <button class="new-game-btn" onclick="goToLobby()">🏠 Вернуться в лобби</button>
           </div>
         `;
 
@@ -287,10 +286,6 @@
         document.getElementById('content').innerHTML = 
           `<div class="error">❌ Failed to load results: ${err.message}</div>`;
       }
-    }
-
-    function playAgain() {
-      window.location.href = `game.html?room=${roomCode}&name=${localStorage.getItem('cattris_player_name') || 'Player'}&role=player`;
     }
 
     function goToLobby() {
