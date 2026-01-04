@@ -750,28 +750,45 @@ window.sendScore = async (finalScore) => {
       if (collide(arena, player)) player.pos.x -= dir;
     }
 
-    function playerReset() {
+function playerReset() {
   const pieces = 'TJLOSZI';
   player.matrix = createPiece(pieces[(pieces.length * Math.random()) | 0]);
   player.pos.y = 0;
-  player.pos.x =
-    (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
+  player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
 
   if (collide(arena, player)) {
-    // 💾 сохраняем финальный счёт до сброса
+    // GAME OVER!
     const finalScore = player.score;
-    if (typeof window.sendScore === 'function') {
-      window.sendScore(finalScore);
-    }
-
+    
+    // ✅ СНАЧАЛА блокируем игру
+    gameStarted = false;
+    gameOver = true;
+    
+    // ✅ Показываем overlay
+    startOverlay.textContent = 'Отправка результата...';
+    startOverlay.style.display = 'block';
+    
+    // ✅ Сбрасываем поле и счёт
     arena.forEach(row => row.fill(0));
     player.score = 0;
     dropInterval = 800;
-
-    gameStarted = false;
-    gameOver = true;
-    startOverlay.textContent = 'Game Over Press Enter';
-    startOverlay.style.display = 'block';
+    updateScore();
+    
+    // ✅ Отправляем очки АСИНХРОННО
+    if (typeof window.sendScore === 'function') {
+      window.sendScore(finalScore)
+        .then(() => {
+          startOverlay.textContent = 'Результат сохранён! Game Over';
+        })
+        .catch(err => {
+          console.error('Ошибка отправки очков:', err);
+          startOverlay.textContent = 'Ошибка! Нажми Enter';
+        });
+    } else {
+      startOverlay.textContent = 'Game Over! Нажми Enter';
+    }
+    
+    return; // ✅ Останавливаемся здесь!
   }
 }
     function playerRotate(dir) {
