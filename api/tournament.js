@@ -1,27 +1,27 @@
-// api/tournament.js - FIXED VERSION
-import { put, head } from '@vercel/blob';
+// api/tournament.js - РАБОЧАЯ ВЕРСИЯ
+import { put } from '@vercel/blob';
 
 const roomKey = (code) => `tournaments/${code}.json`;
 const BLOB_BASE = 'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST' });
+    return res.status(405).json({ error: 'Only POST allowed' });
   }
 
   try {
-    const { code, action, room, playerName } = req.body || {};
+    const { code, action, room, playerName, score } = req.body || {};
 
     if (!code || !action) {
       return res.status(400).json({ error: 'Missing code or action' });
     }
 
-    // ✅ Validate room code format
+    // Валидация формата кода комнаты
     if (!/^[A-Z0-9]{4}$/.test(code)) {
       return res.status(400).json({ error: 'Invalid room code format' });
     }
 
-    // 🔹 GET ROOM
+    // 🔹 ПОЛУЧИТЬ КОМНАТУ
     if (action === 'get_room') {
       const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
       const resp = await fetch(url);
@@ -34,39 +34,40 @@ export default async function handler(req, res) {
       return res.status(200).json(data);
     }
 
-    // 🔹 CHECK IF ROOM EXISTS (for collision prevention)
+    // 🔹 ПРОВЕРИТЬ СУЩЕСТВОВАНИЕ КОМНАТЫ
     if (action === 'check_exists') {
+      const url = `${BLOB_BASE}/${code}.json`;
       try {
-        await head(`${BLOB_BASE}/${code}.json`);
-        return res.json({ exists: true });
+        const resp = await fetch(url, { method: 'HEAD' });
+        return res.json({ exists: resp.ok });
       } catch {
         return res.json({ exists: false });
       }
     }
 
-    // 🔹 SAVE ROOM (with validation)
+    // 🔹 СОХРАНИТЬ КОМНАТУ
     if (action === 'save_room') {
       if (!room) {
         return res.status(400).json({ error: 'Missing room data' });
       }
 
-      // ✅ Validate room structure
+      // Валидация структуры
       if (!room.code || !room.host || !Array.isArray(room.players)) {
         return res.status(400).json({ error: 'Invalid room structure' });
       }
 
-      // ✅ Validate status transitions
+      // Валидация статуса
       const validStatuses = ['waiting', 'started', 'finished'];
       if (!validStatuses.includes(room.status)) {
         return res.status(400).json({ error: 'Invalid status' });
       }
 
-      // ✅ Sanitize player names (prevent XSS)
+      // Санитизация имён игроков
       room.players = room.players.map(name => 
         String(name).trim().slice(0, 12).replace(/[<>'"]/g, '')
       );
 
-      // ✅ Validate scores are numbers
+      // Валидация очков
       if (room.scores) {
         Object.keys(room.scores).forEach(key => {
           room.scores[key] = Number(room.scores[key]) || 0;
@@ -77,26 +78,26 @@ export default async function handler(req, res) {
         contentType: 'application/json',
         access: 'public',
         addRandomSuffix: false,
-        cacheControlMaxAge: 0, // ✅ Disable caching for real-time updates
+        cacheControlMaxAge: 0,
       });
 
       return res.json({ ok: true, room });
     }
 
-    // 🔹 JOIN ROOM (atomic operation)
+    // 🔹 ВОЙТИ В КОМНАТУ (атомарная операция)
     if (action === 'join_room') {
       if (!playerName) {
         return res.status(400).json({ error: 'Missing playerName' });
       }
 
-      // ✅ Sanitize player name
+      // Санитизация имени
       const cleanName = String(playerName).trim().slice(0, 12).replace(/[<>'"]/g, '');
       
       if (!cleanName) {
         return res.status(400).json({ error: 'Invalid player name' });
       }
 
-      // Get current room state
+      // Получить текущее состояние комнаты
       const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
       const resp = await fetch(url);
       
@@ -106,24 +107,24 @@ export default async function handler(req, res) {
       
       const room = await resp.json();
 
-      // ✅ Check if tournament already started
+      // Проверка статуса турнира
       if (room.status !== 'waiting') {
         return res.status(403).json({ error: 'Tournament already started' });
       }
 
-      // ✅ Check for duplicate names
+      // Проверка дубликатов имён
       if (room.players.includes(cleanName)) {
         return res.status(409).json({ error: 'Name already taken' });
       }
 
-      // ✅ Add player atomically
+      // Добавить игрока
       room.players.push(cleanName);
       room.scores = room.scores || {};
       room.played = room.played || {};
       room.scores[cleanName] = 0;
       room.played[cleanName] = false;
 
-      // Save updated room
+      // Сохранить
       await put(roomKey(code), JSON.stringify(room, null, 2), {
         contentType: 'application/json',
         access: 'public',
@@ -134,13 +135,13 @@ export default async function handler(req, res) {
       return res.json({ ok: true, room });
     }
 
-    // 🔹 START TOURNAMENT (only host can do this)
+    // 🔹 НАЧАТЬ ТУРНИР (только хост)
     if (action === 'start_tournament') {
       if (!playerName) {
         return res.status(400).json({ error: 'Missing playerName' });
       }
 
-      // Get current room
+      // Получить комнату
       const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
       const resp = await fetch(url);
       
@@ -150,19 +151,19 @@ export default async function handler(req, res) {
       
       const room = await resp.json();
 
-      // ✅ Verify player is host
+      // Проверка что это хост
       if (room.host !== playerName) {
         return res.status(403).json({ error: 'Only host can start tournament' });
       }
 
-      // ✅ Check status
+      // Проверка статуса
       if (room.status !== 'waiting') {
         return res.status(400).json({ error: 'Tournament already started' });
       }
 
-      // ✅ Check minimum players
-      if (room.players.length < 2) {
-        return res.status(400).json({ error: 'Need at least 2 players' });
+      // Проверка минимального количества игроков
+      if (room.players.length < 1) {
+        return res.status(400).json({ error: 'Need at least 1 player' });
       }
 
       room.status = 'started';
@@ -178,10 +179,8 @@ export default async function handler(req, res) {
       return res.json({ ok: true, room });
     }
 
-    // 🔹 SUBMIT SCORE (with validation)
+    // 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
     if (action === 'submit_score') {
-      const { score } = req.body;
-
       if (!playerName) {
         return res.status(400).json({ error: 'Missing playerName' });
       }
@@ -190,7 +189,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Invalid score' });
       }
 
-      // Get current room
+      // Получить комнату
       const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
       const resp = await fetch(url);
       
@@ -200,17 +199,17 @@ export default async function handler(req, res) {
       
       const room = await resp.json();
 
-      // ✅ Check tournament is started
+      // Проверка статуса
       if (room.status !== 'started') {
         return res.status(400).json({ error: 'Tournament not started' });
       }
 
-      // ✅ Check player is in tournament
+      // Проверка что игрок в турнире
       if (!room.players.includes(playerName)) {
         return res.status(403).json({ error: 'Player not in tournament' });
       }
 
-      // ✅ Update score (keep highest)
+      // Обновить счёт (сохранить максимальный)
       room.scores = room.scores || {};
       room.played = room.played || {};
       
@@ -218,7 +217,7 @@ export default async function handler(req, res) {
       room.scores[playerName] = Math.max(currentScore, score);
       room.played[playerName] = true;
 
-      // ✅ Check if all players finished
+      // Проверить завершение турнира
       const allPlayed = room.players.every(name => room.played[name]);
       if (allPlayed) {
         room.status = 'finished';
