@@ -764,10 +764,14 @@ function playerReset() {
   player.pos.x = (arena[0].length / 2 | 0) - (player.matrix[0].length / 2 | 0);
 
   if (collide(arena, player)) {
+    // ✅ Проверка что игра ещё идёт (защита от повторного вызова)
+    if (!gameStarted) return;
+    
     // GAME OVER!
     const finalScore = player.score;
+    console.log('💀 Game Over! Финальный счёт:', finalScore);
     
-    // ✅ СНАЧАЛА блокируем игру
+    // ✅ СРАЗУ блокируем игру
     gameStarted = false;
     gameOver = true;
     
@@ -782,15 +786,17 @@ function playerReset() {
     updateScore();
     
     // ✅ Отправляем очки АСИНХРОННО
-    if (typeof window.sendScore === 'function') {
+    if (typeof window.sendScore === 'function' && finalScore > 0) {
       window.sendScore(finalScore)
         .then(() => {
           startOverlay.textContent = 'Результат сохранён! Game Over';
         })
         .catch(err => {
           console.error('Ошибка отправки очков:', err);
-          startOverlay.textContent = 'Ошибка! Нажми Enter';
+          startOverlay.textContent = 'Ошибка! Нажми Enter для новой игры';
         });
+    } else if (finalScore === 0) {
+      startOverlay.textContent = 'Game Over! Набери очки и попробуй снова';
     } else {
       startOverlay.textContent = 'Game Over! Нажми Enter';
     }
