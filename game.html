@@ -413,70 +413,40 @@
   </div>
 
 <script>
-// VERCEL BLOB ТУРНИР (полный рабочий код)
+// ПАРАМЕТРЫ ИЗ URL
 const urlParams = new URLSearchParams(window.location.search);
 const roomCode = urlParams.get('room');
 const playerName = decodeURIComponent(urlParams.get('name') || 'Player');
 const playerRole = urlParams.get('role') || 'player';
 
-const BLOB_BASE =
-  'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
-
 const API_BASE = `${location.origin}/api/tournament`;
 
-async function fetchRoom(roomCode) {
+// Вспомогательная функция для API
+async function apiCall(action, data = {}) {
   const res = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: roomCode, action: 'get_room' }),
+    body: JSON.stringify({ action, ...data })
   });
+  
   if (!res.ok) {
-    console.error('fetchRoom error', res.status);
-    return null;
+    const error = await res.json();
+    throw new Error(error.error || 'Ошибка API');
   }
+  
   return await res.json();
 }
 
-async function saveRoom(room) {
-  await fetch(API_BASE, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ code: room.code, action: 'save_room', room }),
-  });
-}
-  
-// 🔹 статус турнира по умолчанию
 let tournamentStatus = 'waiting';
+let currentRoom = null;
 
-// Без roomCode — редирект в лобби
+// Редирект если нет кода комнаты
 if (!roomCode) {
   document.querySelector('.tournament-info').style.display = 'block';
   document.querySelector('.tournament-info').innerHTML = 
-    '❌ <a href="lobby.html" style="color: #FF6B6B;">Go to lobby →</a>';
-  throw new Error('No room code');
+    '❌ <a href="index.html" style="color: #FF6B6B;">Вернуться в лобби →</a>';
+  throw new Error('Нет кода комнаты');
 }
-
-// 👥 Регистрация игрока в комнате (для любого role)
-(async () => {
-  try {
-    const room = await fetchRoom(roomCode);
-    if (!room) return;
-
-    room.players = room.players || [];
-    room.scores = room.scores || {};
-    room.played = room.played || {};
-
-    if (!room.players.includes(playerName)) {
-      room.players.push(playerName);
-      room.scores[playerName] = 0;
-      room.played[playerName] = false;
-
-      await saveRoom(room);
-    }
-  } catch (e) {
-    console.error('join room error', e);
-  }
-})();
   
 // Турнирный UI справа
 const tourUI = document.createElement('div');
@@ -500,82 +470,112 @@ document.querySelector('.tournament-info').style.display = 'block';
 document.querySelector('.tournament-info').innerHTML = 
   `ROOM: <span style="color:#FFD700;">${roomCode}</span> | ${playerName} (${playerRole})`;
 
-// Кнопка START турнира (только хост)
+// КНОПКА СТАРТ (только для хоста)
 if (playerRole === 'host') {
   const btn = document.getElementById('startTournamentBtn');
   btn.style.display = 'block';
   btn.onclick = async () => {
-    if (!confirm('🚀 НАЧАТЬ ТУРНИР?')) return;
+    if (!confirm('🚀 Начать турнир?')) return;
+
+    btn.disabled = true;
+    btn.textContent = '🔄 ЗАПУСКАЕМ...';
 
     try {
-      const room = await fetchRoom(roomCode);
-      if (!room) {
-        alert('❌ Room not found');
-        return;
-      }
-
-      room.status = 'started';
-      await saveRoom(room);
-
-      document.getElementById('status').textContent = '🏁 Турнир начат!';
+      await apiCall('start_tournament', { 
+        code: roomCode, 
+        playerName 
+      });
+      
       btn.classList.add('tournament-started');
-    } catch (e) {
-      console.error(e);
-      alert('❌ Failed to start tournament');
+      btn.textContent = '✅ НАЧАТО!';
+      
+      // Сразу обновляем состояние
+      await updateTournamentState();
+    } catch (err) {
+      console.error(err);
+      alert(`❌ ${err.message}`);
+      btn.disabled = false;
+      btn.textContent = '🏁 Start tournament';
     }
   };
 }
 
-// 🔁 Общий поллинг состояния турнира для всех игроков
-setInterval(async () => {
+// ОБНОВЛЕНИЕ СОСТОЯНИЯ ТУРНИРА
+async function updateTournamentState() {
   try {
-    const room = await fetchRoom(roomCode);
-    if (!room) return;
+    const data = await apiCall('get_room', { code: roomCode });
+    currentRoom = data;
+    tournamentStatus = data.status;
 
-    tournamentStatus = room.status;
-
-    if (room.status === 'waiting') {
-      document.getElementById('status').textContent = '⏳ Waiting for host...';
-    } else if (room.status === 'started') {
-      document.getElementById('status').textContent =
-        '🎮 Tournament started! Press Start';
+    // Обновляем статус
+    const statusEl = document.getElementById('status');
+    if (data.status === 'waiting') {
+      const count = data.players.length;
+      statusEl.textContent = `⏳ Ждём хоста... (${count} игроков)`;
+    } else if (data.status === 'started') {
+      statusEl.textContent = '🎮 Турнир начался! Нажми Start';
+    } else if (data.status === 'finished') {
+      statusEl.textContent = '🏁 Турнир завершён!';
     }
 
-    const leaderboardArr = Object.entries(room.scores || {})
+    // Обновляем таблицу лидеров
+    const leaderboardArr = Object.entries(data.scores || {})
       .sort((a, b) => b[1] - a[1])
-      .map(([name, sc], index) => ({
+      .map(([name, score], index) => ({
         rank: index + 1,
         name,
-        score: sc
+        score,
+        played: data.played?.[name] || false
       }));
 
-    document.getElementById('leaderboard').innerHTML =
-      leaderboardArr.map(p =>
+    document.getElementById('leaderboard').innerHTML = leaderboardArr
+      .map(p => 
         `<div style="padding:4px 0;border-bottom:1px solid rgba(155,106,246,.2);">
-           🏅 #${p.rank} ${p.name}: ${p.score}
+           ${p.played ? '✅' : '⏳'} #${p.rank} ${p.name}: ${p.score}
          </div>`
-      ).join('');
+      )
+      .join('');
 
-    if (room.status === 'finished') {
-      document.getElementById('status').textContent = '🏁 Турнир завершён!';
+    // Редирект на финальный экран
+    if (data.status === 'finished') {
       setTimeout(() => {
-        window.location.href =
-          `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
-      }, 1500);
+        window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
+      }, 2000);
     }
-  } catch (e) {
-    console.error('state poll error', e);
+  } catch (err) {
+    console.error('Ошибка обновления:', err);
+    document.getElementById('status').textContent = '❌ Ошибка связи';
   }
-}, 8000);
+}
+
+// Поллинг каждые 2 секунды (было 8!)
+setInterval(updateTournamentState, 2000);
+updateTournamentState(); // Первая загрузка
   
-// Отправка очков в Blob
+// ОТПРАВКА ОЧКОВ
 window.sendScore = async (finalScore) => {
   try {
-    const room = await fetchRoom(roomCode);
-    if (!room) {
-      alert('Room not found');
-      return;
+    const { tournamentFinished } = await apiCall('submit_score', {
+      code: roomCode,
+      playerName,
+      score: finalScore
+    });
+
+    document.getElementById('status').textContent = `✅ Результат сохранён: ${finalScore}`;
+
+    // Сразу обновляем таблицу
+    await updateTournamentState();
+
+    if (tournamentFinished) {
+      setTimeout(() => {
+        window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
+      }, 1500);
     }
+  } catch (err) {
+    console.error('Ошибка сохранения очков:', err);
+    alert(`❌ Не удалось сохранить результат: ${err.message}`);
+  }
+};
 
     room.scores = room.scores || {};
     room.played = room.played || {};
@@ -867,13 +867,19 @@ if (dropCounter > currentInterval) playerDrop();
 
 function handleAction(action) {
   if (action === 'start') {
-    // пока турнир в waiting — никто не может стартовать
+    // Проверяем статус турнира
     if (tournamentStatus === 'waiting') {
-      startOverlay.textContent = 'Waiting for host to start';
+      startOverlay.textContent = 'Ждём старта от хоста';
       startOverlay.style.display = 'block';
       return;
     }
 
+    if (tournamentStatus === 'finished') {
+      alert('🏁 Турнир уже завершён!');
+      return;
+    }
+
+    // Запускаем игру
     gameOver = false;
     gameStarted = true;
     startOverlay.style.display = 'none';
@@ -941,6 +947,15 @@ document.querySelectorAll('[data-action]').forEach(btn => {
 playerReset();
 updateScore();
 update();
-  </script>
+
+  // Защита от случайного закрытия страницы
+window.addEventListener('beforeunload', (e) => {
+  if (gameStarted && !gameOver) {
+    e.preventDefault();
+    e.returnValue = 'Игра идёт! Точно выйти?';
+  }
+});
+
+</script>
 </body>
 </html>
