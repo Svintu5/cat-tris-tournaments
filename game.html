@@ -554,12 +554,18 @@ updateTournamentState(); // Первая загрузка
   
 // ОТПРАВКА ОЧКОВ
 window.sendScore = async (finalScore) => {
+  console.log('📤 Отправляем очки:', finalScore);
+  
   try {
-    const { tournamentFinished } = await apiCall('submit_score', {
+    const result = await apiCall('submit_score', {
       code: roomCode,
       playerName,
       score: finalScore
     });
+
+    console.log('✅ Результат отправки:', result);
+
+    const { tournamentFinished } = result;
 
     document.getElementById('status').textContent = `✅ Результат сохранён: ${finalScore}`;
 
@@ -567,6 +573,7 @@ window.sendScore = async (finalScore) => {
     await updateTournamentState();
 
     if (tournamentFinished) {
+      console.log('🏁 Турнир завершён! Редирект через 1.5 сек...');
       setTimeout(() => {
         window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
       }, 1500);
