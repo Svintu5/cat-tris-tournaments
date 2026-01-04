@@ -1,200 +1,300 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>🏆 Cat-tris Tournament Results</title>
+  <title>😻 Cat‑tris | Tournament Results</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; }
 
-    html, body {
-      height: 100vh;
-      background:
-        radial-gradient(circle at 20% 20%, #E37DF7 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, #110FFF 0%, transparent 50%),
-        #000000;
+    body {
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Switzer', sans-serif;
-      color: #FFFFFF;
+      flex-direction: column;
       padding: 20px;
+      background:
+        radial-gradient(circle at 20% 20%, #E37DF7 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #110FFF 0%, transparent 50%),
+        #000;
+      font-family: 'Switzer', sans-serif;
+      color: #fff;
     }
 
     .results-container {
-      text-align: center;
-      max-width: 480px;
-      width: 100%;
-      padding: 40px 48px;
       background: rgba(15, 0, 35, 0.95);
-      border-radius: 28px;
       border: 2px solid #9B6AF6;
-      box-shadow:
+      border-radius: 28px;
+      padding: 48px 60px;
+      box-shadow: 
         0 0 0 1px #E37DF7,
-        0 0 60px rgba(155,106,246,0.4);
+        0 0 60px rgba(155, 106, 246, 0.4);
+      text-align: center;
       backdrop-filter: blur(20px);
+      max-width: 600px;
+      width: 100%;
     }
 
-    .trophy {
-      font-size: 64px;
-      margin-bottom: 16px;
-      text-shadow: 0 0 22px rgba(227,125,247,0.6);
-    }
-
-    .room-title {
-      font-size: 24px;
+    .logo {
+      font-size: 36px;
       font-weight: 900;
       letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-bottom: 28px;
+      margin-bottom: 12px;
       background: linear-gradient(45deg, #E37DF7, #9B6AF6);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      text-shadow: 0 0 30px rgba(227,125,247,0.5);
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 20px;
+      color: #00FF88;
+      margin-bottom: 36px;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+    }
+
+    .room-code {
+      font-size: 16px;
+      color: #E6E6FF;
+      margin-bottom: 24px;
+      opacity: 0.8;
     }
 
     .leaderboard {
-      background: rgba(0,0,0,0.3);
-      border-radius: 20px;
-      padding: 20px 22px;
-      margin: 24px 0 8px;
-      border: 1px solid rgba(155,106,246,0.5);
+      margin: 24px 0;
+      text-align: left;
     }
 
-    .leaderboard h2 {
-      color: #E6E6FF;
-      font-size: 18px;
-      margin-bottom: 14px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      text-align: center;
-      opacity: 0.9;
-    }
-
-    .back-btn {
-      margin-top: 24px;
-      padding: 16px 36px;
-      font-size: 16px;
-      font-weight: 800;
-      background: linear-gradient(45deg, #00FF88, #00D06A);
-      border: none;
-      border-radius: 20px;
-      color: #000;
-      cursor: pointer;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      box-shadow: 0 8px 25px rgba(0,255,136,0.4);
+    .player-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      margin: 8px 0;
+      background: rgba(155, 106, 246, 0.1);
+      border: 1px solid rgba(155, 106, 246, 0.3);
+      border-radius: 16px;
       transition: all 0.3s ease;
     }
 
-    .back-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 35px rgba(0,255,136,0.6);
+    .player-row:hover {
+      background: rgba(155, 106, 246, 0.2);
+      transform: translateX(4px);
     }
 
-    @media (max-width: 480px) {
-      .results-container {
-        padding: 32px 32px;
-      }
-      .room-title { font-size: 20px; }
-      .back-btn { padding: 14px 28px; font-size: 15px; }
+    .player-row.winner {
+      background: linear-gradient(90deg, rgba(0, 255, 136, 0.2), rgba(0, 208, 106, 0.1));
+      border: 2px solid #00FF88;
+      box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+    }
+
+    .rank {
+      font-size: 28px;
+      font-weight: 900;
+      width: 60px;
+      text-align: center;
+    }
+
+    .player-info {
+      flex: 1;
+      padding: 0 16px;
+    }
+
+    .player-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .player-status {
+      font-size: 12px;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .player-score {
+      font-size: 32px;
+      font-weight: 900;
+      color: #FFD700;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    .winner .rank {
+      color: #00FF88;
+      text-shadow: 0 0 15px #00FF88;
+    }
+
+    .winner .player-name {
+      color: #00FF88;
+    }
+
+    .actions {
+      margin-top: 36px;
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 18px 32px;
+      border-radius: 16px;
+      border: none;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.3s ease;
+    }
+
+    .new-game-btn {
+      background: linear-gradient(45deg, #00FF88, #00D06A);
+      color: #000;
+      box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+    }
+
+    .new-game-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(0, 255, 136, 0.6);
+    }
+
+    .lobby-btn {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 2px solid #9B6AF6;
+    }
+
+    .lobby-btn:hover {
+      background: rgba(155, 106, 246, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .loading {
+      font-size: 18px;
+      color: #9B6AF6;
+      padding: 40px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .error {
+      color: #FF6B6B;
+      font-size: 16px;
+      padding: 20px;
+      background: rgba(255, 107, 107, 0.1);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 107, 107, 0.3);
     }
   </style>
 </head>
 <body>
   <div class="results-container">
-    <div class="trophy">🏆</div>
-    <div class="room-title" id="roomTitle">Loading...</div>
-    
-    <div class="leaderboard" id="leaderboard">
-      <h2>FINAL RESULTS</h2>
-      <div style="text-align:center; opacity:0.8;">Loading...</div>
+    <div class="logo">😻 Cat-tris</div>
+    <div class="subtitle">🏆 FINAL RESULTS</div>
+    <div class="room-code" id="roomCode">Loading...</div>
+
+    <div id="content">
+      <div class="loading">Loading results...</div>
     </div>
-    
-    <button class="back-btn" onclick="window.location.href='index.html'">
-      🎮 NEW TOURNAMENT
-    </button>
   </div>
 
   <script>
-    const BLOB_BASE =
-      'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
+    const urlParams = new URLSearchParams(window.location.search);
+    const roomCode = urlParams.get('room');
+    const API_BASE = `${location.origin}/api/tournament`;
 
-async function fetchRoom(roomCode) {
-  const roomUrl = `${BLOB_BASE}/${roomCode}.json?download=1`;
-  const res = await fetch(roomUrl);
-  if (!res.ok) {
-    // 404 → комнаты ещё нет
-    return null;
-  }
-  return await res.json();
-}
-
-    async function loadState() {
-      const roomTitle = document.getElementById('roomTitle');
-      const leaderboardEl = document.getElementById('leaderboard');
-      if (!roomTitle || !leaderboardEl) return;
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const roomCodeRaw = urlParams.get('room') || 'UNKNOWN';
-
-      const room = await fetchRoom(roomCodeRaw);
-      if (!room) {
-        leaderboardEl.innerHTML = `
-          <h2>FINAL RESULTS</h2>
-          <div style="color:#FF6B6B;padding:16px;font-size:15px;text-align:center;">
-            ⚠️ Tournament data not found.<br><br>
-            <a href="index.html" style="color:#00FF88;font-weight:bold;font-size:16px;text-decoration:none;">
-              🎮 NEW TOURNAMENT
-            </a>
-          </div>
-        `;
-        return;
-      }
-
-      const roomCode = room.code.toUpperCase();
-      roomTitle.textContent = \`Tournament \${roomCode} – Final Results\`;
-
-      const leaderboardArr = Object.entries(room.scores || {})
-        .sort((a, b) => b[1] - a[1])
-        .map(([name, sc], index) => ({
-          rank: index + 1,
-          name,
-          score: sc
-        }));
-
-      const rows = leaderboardArr.map((p, idx) => `
-        <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:6px 0;
-            border-bottom:${idx === (leaderboardArr.length - 1)
-              ? 'none' : '1px solid rgba(255,255,255,0.12)'};
-        ">
-          <span>🏅 #${p.rank} ${p.name}</span>
-          <span>${p.score}</span>
-        </div>
-      `).join('') || `
-        <div style="color:#FF6B6B;padding:12px 0;text-align:center;opacity:0.9;">
-          No scores submitted.
-        </div>
-      `;
-
-      leaderboardEl.innerHTML = `
-        <h2>FINAL RESULTS</h2>
-        ${rows}
-      `;
+    if (!roomCode) {
+      document.getElementById('content').innerHTML = 
+        '<div class="error">❌ No room code provided!</div>';
+    } else {
+      document.getElementById('roomCode').textContent = `ROOM: ${roomCode}`;
+      loadResults();
     }
 
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => {
-        loadState();
-        setInterval(loadState, 3000);
-      });
-    } else {
-      loadState();
-      setInterval(loadState, 3000);
+    async function loadResults() {
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            code: roomCode, 
+            action: 'get_room' 
+          })
+        });
+
+        if (!res.ok) {
+          throw new Error('Failed to load results');
+        }
+
+        const room = await res.json();
+
+        // Сортируем игроков по очкам
+        const leaderboard = Object.entries(room.scores || {})
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, score], index) => ({
+            rank: index + 1,
+            name,
+            score,
+            played: room.played?.[name] || false
+          }));
+
+        if (leaderboard.length === 0) {
+          document.getElementById('content').innerHTML = 
+            '<div class="error">No players found!</div>';
+          return;
+        }
+
+        // Рендерим таблицу лидеров
+        let html = '<div class="leaderboard">';
+        
+        leaderboard.forEach((player, index) => {
+          const isWinner = index === 0;
+          const medal = isWinner ? '🏆' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : ''));
+          
+          html += `
+            <div class="player-row ${isWinner ? 'winner' : ''}">
+              <div class="rank">${medal || `#${player.rank}`}</div>
+              <div class="player-info">
+                <div class="player-name">${player.name}</div>
+                <div class="player-status">${player.played ? 'Finished' : 'Did not play'}</div>
+              </div>
+              <div class="player-score">${player.score}</div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+
+        html += `
+          <div class="actions">
+            <button class="new-game-btn" onclick="playAgain()">🎮 Play Again</button>
+            <button class="lobby-btn" onclick="goToLobby()">🏠 Lobby</button>
+          </div>
+        `;
+
+        document.getElementById('content').innerHTML = html;
+
+      } catch (err) {
+        console.error('Error loading results:', err);
+        document.getElementById('content').innerHTML = 
+          `<div class="error">❌ Failed to load results: ${err.message}</div>`;
+      }
+    }
+
+    function playAgain() {
+      window.location.href = `game.html?room=${roomCode}&name=${localStorage.getItem('cattris_player_name') || 'Player'}&role=player`;
+    }
+
+    function goToLobby() {
+      window.location.href = 'index.html';
     }
   </script>
 </body>
