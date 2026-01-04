@@ -216,12 +216,13 @@ export default async function handler(req, res) {
       room.scores[playerName] = Math.max(currentScore, score);
       room.played[playerName] = true;
 
-      // Проверить завершение турнира
-      const allPlayed = room.players.every(name => room.played[name]);
-      if (allPlayed) {
-        room.status = 'finished';
-        room.finishedAt = new Date().toISOString();
-      }
+// ✅ Проверить завершение турнира
+// Считаем только тех игроков, кто был в момент старта
+const allPlayed = room.players.every(name => room.played[name] === true);
+if (allPlayed) {
+  room.status = 'finished';
+  room.finishedAt = new Date().toISOString();
+}
 
       await put(roomKey(code), JSON.stringify(room, null, 2), {
         contentType: 'application/json',
