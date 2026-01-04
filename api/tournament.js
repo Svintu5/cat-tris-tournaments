@@ -79,6 +79,7 @@ export default async function handler(req, res) {
         access: 'public',
         addRandomSuffix: false,
         cacheControlMaxAge: 0,
+        allowOverwrite: true,
       });
 
       return res.json({ ok: true, room });
@@ -124,12 +125,12 @@ export default async function handler(req, res) {
       room.scores[cleanName] = 0;
       room.played[cleanName] = false;
 
-      // Сохранить
       await put(roomKey(code), JSON.stringify(room, null, 2), {
         contentType: 'application/json',
         access: 'public',
         addRandomSuffix: false,
         cacheControlMaxAge: 0,
+        allowOverwrite: true,
       });
 
       return res.json({ ok: true, room });
@@ -174,12 +175,8 @@ export default async function handler(req, res) {
         access: 'public',
         addRandomSuffix: false,
         cacheControlMaxAge: 0,
+        allowOverwrite: true,
       });
-
-      return res.json({ ok: true, room });
-    }
-
-    // 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
     if (action === 'submit_score') {
       if (!playerName) {
         return res.status(400).json({ error: 'Missing playerName' });
@@ -229,14 +226,8 @@ export default async function handler(req, res) {
         access: 'public',
         addRandomSuffix: false,
         cacheControlMaxAge: 0,
+        allowOverwrite: true,
       });
-
-      return res.json({ 
-        ok: true, 
-        room,
-        tournamentFinished: allPlayed 
-      });
-    }
 
     return res.status(400).json({ error: 'Unknown action' });
 
