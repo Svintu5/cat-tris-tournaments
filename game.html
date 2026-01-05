@@ -513,7 +513,15 @@ async function updateTournamentState() {
       const count = data.players.length;
       statusEl.textContent = `⏳ Ждём хоста... (${count} игроков)`;
     } else if (data.status === 'started') {
-      statusEl.textContent = '🎮 Турнир начался! Нажми Start';
+      // ✅ Проверяем, сыграл ли уже этот игрок
+      const alreadyPlayed = data.played && data.played[playerName] === true;
+      if (alreadyPlayed) {
+        statusEl.textContent = '✅ Вы сыграли! Ждём других игроков...';
+        startOverlay.textContent = 'Вы уже сыграли! Ожидайте завершения турнира.';
+        startOverlay.style.display = 'block';
+      } else {
+        statusEl.textContent = '🎮 Турнир начался! Нажми Start';
+      }
     } else if (data.status === 'finished') {
       statusEl.textContent = '🏁 Турнир завершён!';
     }
@@ -865,6 +873,14 @@ function handleAction(action) {
 
     if (tournamentStatus === 'finished') {
       alert('🏁 Турнир уже завершён!');
+      return;
+    }
+
+    // ✅ НОВАЯ ПРОВЕРКА: Уже сыграл?
+    if (currentRoom && currentRoom.played && currentRoom.played[playerName] === true) {
+      alert('✅ Вы уже сыграли! Ожидайте завершения турнира.');
+      startOverlay.textContent = 'Вы уже сыграли! Ждём других игроков...';
+      startOverlay.style.display = 'block';
       return;
     }
 
