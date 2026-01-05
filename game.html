@@ -793,20 +793,23 @@ function playerReset() {
     dropInterval = 800;
     updateScore();
     
-    // ✅ Отправляем очки АСИНХРОННО
-    if (typeof window.sendScore === 'function' && finalScore > 0) {
+    // ✅ Отправляем очки ВСЕГДА (даже если 0)
+    if (typeof window.sendScore === 'function') {
       window.sendScore(finalScore)
         .then(() => {
-          startOverlay.textContent = 'Результат сохранён! Game Over';
+          startOverlay.textContent = `Результат сохранён: ${finalScore} очков`;
         })
         .catch(err => {
           console.error('Ошибка отправки очков:', err);
-          startOverlay.textContent = 'Ошибка! Нажми Enter для новой игры';
+          // Если ошибка "already played" - не показываем как критичную
+          if (err.message.includes('already played')) {
+            startOverlay.textContent = 'Вы уже сыграли!';
+          } else {
+            startOverlay.textContent = 'Ошибка отправки результата';
+          }
         });
-    } else if (finalScore === 0) {
-      startOverlay.textContent = 'Game Over! Набери очки и попробуй снова';
     } else {
-      startOverlay.textContent = 'Game Over! Нажми Enter';
+      startOverlay.textContent = 'Game Over!';
     }
     
     return; // ✅ Останавливаемся здесь!
