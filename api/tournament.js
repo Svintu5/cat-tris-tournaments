@@ -179,65 +179,65 @@ export default async function handler(req, res) {
     }
 
     // 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
-    if (action === 'submit_score') {
-      if (!playerName) {
-        return res.status(400).json({ error: 'Missing playerName' });
-      }
+if (action === 'submit_score') {
+  if (!playerName) {
+    return res.status(400).json({ error: 'Missing playerName' });
+  }
 
-      if (typeof score !== 'number' || score < 0) {
-        return res.status(400).json({ error: 'Invalid score' });
-      }
+  if (typeof score !== 'number' || score < 0) {
+    return res.status(400).json({ error: 'Invalid score' });
+  }
 
-      // Получить комнату
-      const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
-      const resp = await fetch(url);
-      
-      if (!resp.ok) {
-        return res.status(404).json({ error: 'Room not found' });
-      }
-      
-      const room = await resp.json();
+  // Получить комнату
+  const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
+  const resp = await fetch(url);
+  
+  if (!resp.ok) {
+    return res.status(404).json({ error: 'Room not found' });
+  }
+  
+  const room = await resp.json();
 
-      // Проверка статуса
-      if (room.status !== 'started') {
-        return res.status(400).json({ error: 'Tournament not started' });
-      }
+  // Проверка статуса
+  if (room.status !== 'started') {
+    return res.status(400).json({ error: 'Tournament not started' });
+  }
 
-      // Проверка что игрок в турнире
-      if (!room.players.includes(playerName)) {
-        return res.status(403).json({ error: 'Player not in tournament' });
-      }
+  // Проверка что игрок в турнире
+  if (!room.players.includes(playerName)) {
+    return res.status(403).json({ error: 'Player not in tournament' });
+  }
 
-      // Обновить счёт (сохранить максимальный)
-      room.scores = room.scores || {};
-      room.played = room.played || {};
-      
-      const currentScore = room.scores[playerName] || 0;
-      room.scores[playerName] = Math.max(currentScore, score);
-      room.played[playerName] = true;
+  // ✅ НОВАЯ ПРОВЕРКА: Уже сыграл?
+  room.played = room.played || {};
+  if (room.played[playerName] === true) {
+    return res.status(400).json({ error: 'You already played' });
+  }
 
-// ✅ Проверить завершение турнира
-// Считаем только тех игроков, кто был в момент старта
-const allPlayed = room.players.every(name => room.played[name] === true);
-if (allPlayed) {
-  room.status = 'finished';
-  room.finishedAt = new Date().toISOString();
+  // Обновить счёт
+  room.scores = room.scores || {};
+  room.scores[playerName] = score;
+  room.played[playerName] = true;
+
+  console.log(`🎮 ${playerName}: score=${score}`);
+
+  // Проверить завершение турнира (все сыграли?)
+  const allPlayed = room.players.every(name => room.played[name] === true);
+
+  await put(roomKey(code), JSON.stringify(room, null, 2), {
+    contentType: 'application/json',
+    access: 'public',
+    addRandomSuffix: false,
+    cacheControlMaxAge: 0,
+    allowOverwrite: true,
+  });
+
+  return res.json({ 
+    ok: true, 
+    room,
+    tournamentFinished: allPlayed
+  });
 }
-
-      await put(roomKey(code), JSON.stringify(room, null, 2), {
-        contentType: 'application/json',
-        access: 'public',
-        addRandomSuffix: false,
-        cacheControlMaxAge: 0,
-        allowOverwrite: true,
-      });
-
-      return res.json({ 
-        ok: true, 
-        room,
-        tournamentFinished: allPlayed 
-      });
-    }
 
     return res.status(400).json({ error: 'Unknown action' });
 
