@@ -220,73 +220,84 @@
     }
 
     async function loadResults() {
-      try {
-        const res = await fetch(API_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            code: roomCode, 
-            action: 'get_room' 
-          })
-        });
+  try {
+    console.log('📥 Загружаем результаты для комнаты:', roomCode);
+    
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        code: roomCode, 
+        action: 'get_room' 
+      })
+    });
 
-        if (!res.ok) {
-          throw new Error('Failed to load results');
-        }
-
-        const room = await res.json();
-
-        // Сортируем игроков по очкам
-        const leaderboard = Object.entries(room.scores || {})
-          .sort((a, b) => b[1] - a[1])
-          .map(([name, score], index) => ({
-            rank: index + 1,
-            name,
-            score,
-            played: room.played?.[name] || false
-          }));
-
-        if (leaderboard.length === 0) {
-          document.getElementById('content').innerHTML = 
-            '<div class="error">No players found!</div>';
-          return;
-        }
-
-        // Рендерим таблицу лидеров
-        let html = '<div class="leaderboard">';
-        
-        leaderboard.forEach((player, index) => {
-          const isWinner = index === 0;
-          const medal = isWinner ? '🏆' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : ''));
-          
-          html += `
-            <div class="player-row ${isWinner ? 'winner' : ''}">
-              <div class="rank">${medal || `#${player.rank}`}</div>
-              <div class="player-info">
-                <div class="player-name">${player.name}</div>
-                <div class="player-status">${player.played ? 'Finished' : 'Did not play'}</div>
-              </div>
-              <div class="player-score">${player.score}</div>
-            </div>
-          `;
-        });
-
-        html += '</div>';
-
-        html += `
-          <div class="actions">
-            <button class="new-game-btn" onclick="goToLobby()">🏠 Вернуться в лобби</button>
-          </div>
-        `;
-
-        document.getElementById('content').innerHTML = html;
-
-      } catch (err) {
-        console.error('Error loading results:', err);
-        document.getElementById('content').innerHTML = 
-          `<div class="error">❌ Failed to load results: ${err.message}</div>`;
-      }
+    if (!res.ok) {
+      throw new Error('Failed to load results');
     }
+
+    const room = await res.json();
+    console.log('✅ Данные комнаты получены:', room);
+
+    // ✅ Проверяем что данные корректные
+    if (!room.scores || Object.keys(room.scores).length === 0) {
+      console.error('❌ Нет данных по очкам!');
+      throw new Error('No scores found');
+    }
+
+    // Сортируем игроков по очкам
+    const leaderboard = Object.entries(room.scores || {})
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, score], index) => ({
+        rank: index + 1,
+        name,
+        score,
+        played: room.played?.[name] || false
+      }));
+
+    console.log('🏆 Таблица лидеров:', leaderboard);
+
+    if (leaderboard.length === 0) {
+      document.getElementById('content').innerHTML = 
+        '<div class="error">No players found!</div>';
+      return;
+    }
+
+    // Рендерим таблицу лидеров
+    let html = '<div class="leaderboard">';
+    
+    leaderboard.forEach((player, index) => {
+      const isWinner = index === 0;
+      const medal = isWinner ? '🏆' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : ''));
+      
+      html += `
+        <div class="player-row ${isWinner ? 'winner' : ''}">
+          <div class="rank">${medal || `#${player.rank}`}</div>
+          <div class="player-info">
+            <div class="player-name">${player.name}</div>
+            <div class="player-status">${player.played ? 'Finished' : 'Did not play'}</div>
+          </div>
+          <div class="player-score">${player.score}</div>
+        </div>
+      `;
+    });
+
+    html += '</div>';
+
+    html += `
+      <div class="actions">
+        <button class="new-game-btn" onclick="goToLobby()">🏠 Вернуться в лобби</button>
+      </div>
+    `;
+
+    document.getElementById('content').innerHTML = html;
+
+  } catch (err) {
+    console.error('Error loading results:', err);
+    document.getElementById('content').innerHTML = 
+      `<div class="error">❌ Failed to load results: ${err.message}</div>`;
+  }
+}
 
     function goToLobby() {
       window.location.href = 'index.html';
