@@ -544,12 +544,15 @@ async function updateTournamentState() {
       )
       .join('');
 
-    // Редирект на финальный экран
-    if (data.status === 'finished') {
-      setTimeout(() => {
-        window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
-      }, 2000);
-    }
+// Редирект на финальный экран
+if (data.status === 'finished') {
+  console.log('🏁 Статус: finished, редирект через 3 сек...');
+  console.log('📊 Финальные данные:', data);
+  
+  setTimeout(() => {
+    window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
+  }, 3000); // ✅ Увеличили с 2000 до 3000
+}
   } catch (err) {
     console.error('Ошибка обновления:', err);
     document.getElementById('status').textContent = '❌ Ошибка связи';
