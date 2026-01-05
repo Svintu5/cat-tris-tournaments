@@ -573,7 +573,11 @@ window.sendScore = async (finalScore) => {
 
     console.log('✅ Результат отправки:', result);
 
-    const { tournamentFinished } = result;
+    const { room, tournamentFinished } = result;
+
+    // ✅ ВАЖНО: Сразу обновляем локальное состояние!
+    currentRoom = room;
+    tournamentStatus = room.status;
 
     document.getElementById('status').textContent = `✅ Результат сохранён: ${finalScore}`;
 
@@ -588,6 +592,12 @@ window.sendScore = async (finalScore) => {
     }
   } catch (err) {
     console.error('Ошибка сохранения очков:', err);
+    
+    // ✅ Если ошибка "already played" - обновляем состояние
+    if (err.message.includes('already played')) {
+      await updateTournamentState();
+    }
+    
     alert(`❌ Не удалось сохранить результат: ${err.message}`);
   }
 };
@@ -797,7 +807,16 @@ function playerReset() {
     if (typeof window.sendScore === 'function') {
       window.sendScore(finalScore)
         .then(() => {
-          startOverlay.textContent = `Результат сохранён: ${finalScore} очков`;
+          startOverlay.textContent = `Результат сохранён: ${finalScore} очков. Ждите завершения турнира.`;
+          
+          // ✅ Через 2 секунды проверяем можно ли играть снова
+          setTimeout(async () => {
+            await updateTournamentState();
+            if (currentRoom && currentRoom.played && currentRoom.played[playerName]) {
+              startOverlay.textContent = 'Вы сыграли! Ждём других игроков...';
+              gameOver = true; // Держим блокировку
+            }
+          }, 2000);
         })
         .catch(err => {
           console.error('Ошибка отправки очков:', err);
@@ -879,11 +898,35 @@ function handleAction(action) {
       return;
     }
 
-    // ✅ НОВАЯ ПРОВЕРКА: Уже сыграл?
-    if (currentRoom && currentRoom.played && currentRoom.played[playerName] === true) {
-      alert('✅ Вы уже сыграли! Ожидайте завершения турнира.');
-      startOverlay.textContent = 'Вы уже сыграли! Ждём других игроков...';
+    // ✅ УЛУЧШЕННАЯ ПРОВЕРКА: Уже сыграл?
+    if (currentRoom && currentRoom.played) {
+      const alreadyPlayed = currentRoom.played[playerName] === true;
+      console.log('🔍 Проверка played:', {
+        playerName,
+        played: currentRoom.played,
+        alreadyPlayed
+      });
+      
+      if (alreadyPlayed) {
+        alert('✅ Вы уже сыграли! Ожидайте завершения турнира.');
+        startOverlay.textContent = 'Вы уже сыграли! Ждём других игроков...';
+        startOverlay.style.display = 'block';
+        return;
+      }
+    }
+
+    // ✅ Дополнительная проверка на случай если game over был недавно
+    if (gameOver) {
+      console.log('⚠️ Попытка начать игру сразу после game over');
+      startOverlay.textContent = 'Ожидайте обновления статуса...';
       startOverlay.style.display = 'block';
+      
+      // Форсируем обновление состояния
+      updateTournamentState().then(() => {
+        if (currentRoom && currentRoom.played && currentRoom.played[playerName]) {
+          alert('✅ Вы уже сыграли!');
+        }
+      });
       return;
     }
 
