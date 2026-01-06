@@ -646,16 +646,25 @@ updateTournamentState(); // Первая загрузка
   
 // ОТПРАВКА ОЧКОВ
 window.sendScore = async (finalScore) => {
-  console.log('📤 Отправляем очки:', finalScore);
+  console.log('=== НАЧАЛО ОТПРАВКИ ОЧКОВ ===');
+  console.log('📤 Игрок:', playerName);
+  console.log('📤 Комната:', roomCode);
+  console.log('📤 Очки:', finalScore);
+  console.log('📤 Роль:', playerRole);
   
   try {
+    console.log('🌐 Отправляем запрос на API...');
+    
     const result = await apiCall('submit_score', {
       code: roomCode,
       playerName,
       score: finalScore
     });
 
-    console.log('✅ Результат отправки:', result);
+    console.log('✅ ОТВЕТ API:', result);
+    console.log('📊 Обновлённая комната:', result.room);
+    console.log('🎯 Очки в комнате:', result.room.scores);
+    console.log('🎮 Статус played:', result.room.played);
 
     const { room, tournamentFinished } = result;
 
@@ -669,13 +678,30 @@ window.sendScore = async (finalScore) => {
     await updateTournamentState();
 
     if (tournamentFinished) {
-      console.log('🏁 Турнир завершён! Редирект через 1.5 сек...');
+      console.log('🏁 Турнир завершён! tournamentFinished = true');
+      console.log('📊 Финальные очки перед редиректом:', room.scores);
+      
       setTimeout(() => {
+        console.log('🔄 Редирект на tournament-end.html...');
         window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
-      }, 1500);
+      }, 2500);
+    } else {
+      console.log('⏳ Турнир продолжается, ждём других игроков...');
     }
   } catch (err) {
-    console.error('Ошибка сохранения очков:', err);
+    console.error('❌ ОШИБКА ОТПРАВКИ ОЧКОВ:', err);
+    console.error('❌ Сообщение:', err.message);
+    
+    if (err.message.includes('already played')) {
+      await updateTournamentState();
+      alert('✅ Вы уже отправили результат!');
+    } else {
+      alert(`❌ Не удалось сохранить результат: ${err.message}`);
+    }
+  }
+  
+  console.log('=== КОНЕЦ ОТПРАВКИ ОЧКОВ ===');
+};
     
     // ✅ Если ошибка "already played" - обновляем состояние
     if (err.message.includes('already played')) {
