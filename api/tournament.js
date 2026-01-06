@@ -178,39 +178,50 @@ export default async function handler(req, res) {
       return res.json({ ok: true, room });
     }
 
-    // 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
+// 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
 if (action === 'submit_score') {
+  console.log('=== API: submit_score ===');
+  console.log('📥 Получены данные:', { code, playerName, score });
+  
   if (!playerName) {
     return res.status(400).json({ error: 'Missing playerName' });
   }
 
   if (typeof score !== 'number' || score < 0) {
+    console.log('❌ Невалидный score:', score, typeof score);
     return res.status(400).json({ error: 'Invalid score' });
   }
 
   // Получить комнату
   const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
+  console.log('🌐 Загружаем комнату из:', url);
+  
   const resp = await fetch(url);
   
   if (!resp.ok) {
+    console.log('❌ Комната не найдена, статус:', resp.status);
     return res.status(404).json({ error: 'Room not found' });
   }
   
   const room = await resp.json();
+  console.log('📊 Текущее состояние комнаты:', room);
 
   // Проверка статуса
   if (room.status !== 'started') {
+    console.log('❌ Турнир не в статусе started:', room.status);
     return res.status(400).json({ error: 'Tournament not started' });
   }
 
   // Проверка что игрок в турнире
   if (!room.players.includes(playerName)) {
+    console.log('❌ Игрок не в списке:', playerName, 'Список:', room.players);
     return res.status(403).json({ error: 'Player not in tournament' });
   }
 
-  // ✅ НОВАЯ ПРОВЕРКА: Уже сыграл?
+  // ✅ Проверка: Уже сыграл?
   room.played = room.played || {};
   if (room.played[playerName] === true) {
+    console.log('⚠️ Игрок уже сыграл:', playerName);
     return res.status(400).json({ error: 'You already played' });
   }
 
@@ -219,10 +230,14 @@ if (action === 'submit_score') {
   room.scores[playerName] = score;
   room.played[playerName] = true;
 
-  console.log(`🎮 ${playerName}: score=${score}`);
+  console.log('💾 Обновлённые очки:', room.scores);
+  console.log('💾 Обновлённый played:', room.played);
 
   // Проверить завершение турнира (все сыграли?)
   const allPlayed = room.players.every(name => room.played[name] === true);
+  console.log('🎮 Все сыграли?', allPlayed);
+  console.log('👥 Игроки:', room.players);
+  console.log('✅ Played статус:', room.played);
 
   await put(roomKey(code), JSON.stringify(room, null, 2), {
     contentType: 'application/json',
@@ -231,6 +246,9 @@ if (action === 'submit_score') {
     cacheControlMaxAge: 0,
     allowOverwrite: true,
   });
+
+  console.log('✅ Данные сохранены в Blob');
+  console.log('=== API: submit_score завершён ===');
 
   return res.json({ 
     ok: true, 
