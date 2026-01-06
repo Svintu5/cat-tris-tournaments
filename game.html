@@ -458,7 +458,6 @@ tourUI.style.cssText = `
   box-shadow:0 0 30px rgba(155,106,246,.4);
 `;
 
-// ✅ Добавляем информацию о роли для хоста
 const roleInfo = playerRole === 'host' 
   ? '<div style="color:#FFD700;font-size:12px;margin-bottom:8px;">👑 HOST</div>' 
   : '';
@@ -474,105 +473,105 @@ document.body.appendChild(tourUI);
 
 // КНОПКА СТАРТ (только для хоста)
 if (playerRole === 'host') {
-  const btn = document.getElementById('startTournamentBtn');
-  btn.style.display = 'block';
-  btn.onclick = async () => {
-    if (!confirm('🚀 Начать турнир?')) return;
+  const startBtn = document.getElementById('startTournamentBtn');
+  if (startBtn) {
+    startBtn.style.display = 'block';
+    startBtn.onclick = async () => {
+      if (!confirm('🚀 Начать турнир?')) return;
 
-    btn.disabled = true;
-    btn.textContent = '🔄 ЗАПУСКАЕМ...';
+      startBtn.disabled = true;
+      startBtn.textContent = '🔄 ЗАПУСКАЕМ...';
 
-    try {
-      await apiCall('start_tournament', { 
-        code: roomCode, 
-        playerName 
-      });
-      
-      btn.style.display = 'none'; // Прячем кнопку старта
-      
-      // ✅ Показываем кнопку завершения
-      document.getElementById('endTournamentBtn').style.display = 'block';
-      
-      await updateTournamentState();
-    } catch (err) {
-      console.error(err);
-      alert(`❌ ${err.message}`);
-      btn.disabled = false;
-      btn.textContent = '🏁 Start tournament';
-    }
-  };
+      try {
+        await apiCall('start_tournament', { 
+          code: roomCode, 
+          playerName 
+        });
+        
+        startBtn.style.display = 'none';
+        
+        const endBtn = document.getElementById('endTournamentBtn');
+        if (endBtn) endBtn.style.display = 'block';
+        
+        await updateTournamentState();
+      } catch (err) {
+        console.error(err);
+        alert(`❌ ${err.message}`);
+        startBtn.disabled = false;
+        startBtn.textContent = '🏁 Start tournament';
+      }
+    };
+  }
   
-  // ✅ СОЗДАЁМ КНОПКУ ЗАВЕРШИТЬ ТУРНИР
-  const endBtn = document.createElement('button');
-  endBtn.id = 'endTournamentBtn';
-  endBtn.className = 'start-tournament-btn tournament-started';
-  endBtn.style.cssText = `
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    background: linear-gradient(45deg, #FFD700, #FFA500);
-    color: #000;
-    border: none;
-    border-radius: 20px;
-    padding: 20px 32px;
-    font-size: 18px;
-    font-weight: 900;
-    cursor: pointer;
-    box-shadow: 0 12px 32px rgba(255, 215, 0, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    z-index: 2000;
-    transition: all 0.3s ease;
-    font-family: 'Switzer', sans-serif;
-    display: none;
-  `;
-  endBtn.textContent = '🏁 Завершить турнир';
-  
-  endBtn.onmouseover = () => {
-    endBtn.style.transform = 'translateY(-3px)';
-    endBtn.style.boxShadow = '0 16px 40px rgba(255, 215, 0, 0.6)';
-  };
-  
-  endBtn.onmouseout = () => {
-    endBtn.style.transform = 'translateY(0)';
-    endBtn.style.boxShadow = '0 12px 32px rgba(255, 215, 0, 0.4)';
-  };
-  
-  endBtn.onclick = async () => {
-    if (!confirm('🏁 Завершить турнир и показать результаты?')) return;
+  // Создаём кнопку "Завершить турнир" если её нет
+  let endBtn = document.getElementById('endTournamentBtn');
+  if (!endBtn) {
+    endBtn = document.createElement('button');
+    endBtn.id = 'endTournamentBtn';
+    endBtn.className = 'start-tournament-btn tournament-started';
+    endBtn.style.cssText = `
+      position: fixed;
+      bottom: 40px;
+      right: 40px;
+      background: linear-gradient(45deg, #FFD700, #FFA500);
+      color: #000;
+      border: none;
+      border-radius: 20px;
+      padding: 20px 32px;
+      font-size: 18px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 12px 32px rgba(255, 215, 0, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      z-index: 2000;
+      transition: all 0.3s ease;
+      font-family: 'Switzer', sans-serif;
+      display: none;
+    `;
+    endBtn.textContent = '🏁 Завершить турнир';
     
-    endBtn.disabled = true;
-    endBtn.textContent = '🔄 ЗАВЕРШАЕМ...';
+    endBtn.onmouseover = () => {
+      endBtn.style.transform = 'translateY(-3px)';
+      endBtn.style.boxShadow = '0 16px 40px rgba(255, 215, 0, 0.6)';
+    };
     
-    try {
-      console.log('🏁 Завершаем турнир вручную...');
+    endBtn.onmouseout = () => {
+      endBtn.style.transform = 'translateY(0)';
+      endBtn.style.boxShadow = '0 12px 32px rgba(255, 215, 0, 0.4)';
+    };
+    
+    endBtn.onclick = async () => {
+      if (!confirm('🏁 Завершить турнир и показать результаты?')) return;
       
-      // Получаем свежие данные
-      const data = await apiCall('get_room', { code: roomCode });
-      console.log('📊 Текущие данные:', data);
+      endBtn.disabled = true;
+      endBtn.textContent = '🔄 ЗАВЕРШАЕМ...';
       
-      // Меняем статус
-      data.status = 'finished';
-      data.finishedAt = new Date().toISOString();
-      
-      console.log('💾 Сохраняем с finished статусом...');
-      await apiCall('save_room', { code: roomCode, room: data });
-      
-      console.log('✅ Сохранено! Редирект через 1 сек...');
-      
-      // Редирект
-      setTimeout(() => {
-        window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
-      }, 1000);
-    } catch (err) {
-      console.error('❌ Ошибка завершения:', err);
-      alert(`❌ ${err.message}`);
-      endBtn.disabled = false;
-      endBtn.textContent = '🏁 Завершить турнир';
-    }
-  };
-  
-  document.body.appendChild(endBtn);
+      try {
+        console.log('🏁 Завершаем турнир...');
+        
+        const data = await apiCall('get_room', { code: roomCode });
+        console.log('📊 Данные:', data);
+        
+        data.status = 'finished';
+        data.finishedAt = new Date().toISOString();
+        
+        await apiCall('save_room', { code: roomCode, room: data });
+        console.log('✅ Сохранено!');
+        
+        setTimeout(() => {
+          window.location.href = `tournament-end.html?room=${encodeURIComponent(roomCode)}`;
+        }, 1000);
+      } catch (err) {
+        console.error('❌ Ошибка:', err);
+        alert(`❌ ${err.message}`);
+        endBtn.disabled = false;
+        endBtn.textContent = '🏁 Завершить турнир';
+      }
+    };
+    
+    document.body.appendChild(endBtn);
+  }
 }
 
 // ОБНОВЛЕНИЕ СОСТОЯНИЯ ТУРНИРА
