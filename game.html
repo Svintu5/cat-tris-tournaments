@@ -701,15 +701,6 @@ window.sendScore = async (finalScore) => {
   
   console.log('=== КОНЕЦ ОТПРАВКИ ОЧКОВ ===');
 };
-    
-    // ✅ Если ошибка "already played" - обновляем состояние
-    if (err.message.includes('already played')) {
-      await updateTournamentState();
-    }
-    
-    alert(`❌ Не удалось сохранить результат: ${err.message}`);
-  }
-};
 
 // ТЕТРИС ИГРА
     const canvas = document.getElementById('game');
