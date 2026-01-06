@@ -457,10 +457,17 @@ tourUI.style.cssText = `
   color:white;font-family:Switzer,sans-serif;backdrop-filter:blur(20px);
   box-shadow:0 0 30px rgba(155,106,246,.4);
 `;
+
+// ✅ Добавляем информацию о роли для хоста
+const roleInfo = playerRole === 'host' 
+  ? '<div style="color:#FFD700;font-size:12px;margin-bottom:8px;">👑 HOST</div>' 
+  : '';
+
 tourUI.innerHTML = `
-  <h3 style="color:#E37DF7;margin:0 0 12px;font-size:18px">Room ${roomCode}</h3>
-  <div style="margin-bottom:12px;font-size:14px">Player ${playerName}</div>
-  <div id="status" style="margin-bottom:16px;font-size:14px">Играйте!</div>
+  ${roleInfo}
+  <h3 style="color:#E37DF7;margin:0 0 12px;font-size:18px">🏆 ${roomCode}</h3>
+  <div style="margin-bottom:12px;font-size:14px">👤 ${playerName}</div>
+  <div id="status" style="margin-bottom:16px;font-size:14px">Загрузка...</div>
   <div id="leaderboard" style="max-height:200px;overflow:auto;font-size:13px"></div>
 `;
 document.body.appendChild(tourUI);
