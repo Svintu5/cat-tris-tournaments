@@ -35,6 +35,9 @@ function generateUniqueRoomCode() {
   return code;
 }
 
+  // Ждём загрузки DOM перед установкой обработчиков
+  document.addEventListener('DOMContentLoaded', () => {
+
 // СОЗДАТЬ КОМНАТУ
 document.getElementById('createBtn').onclick = async () => {
   const nameInput = document.getElementById('playerName');
@@ -145,10 +148,9 @@ document.getElementById('roomCode').onkeypress = (e) => {
 };
 
 // Восстановить имя
-window.onload = () => {
-  const saved = localStorage.getItem('cattris_player_name');
-  if (saved) {
-    document.getElementById('playerName').value = saved;
-  }
-};
-</script>
+const saved = localStorage.getItem('cattris_player_name');
+    if (saved) {
+        document.getElementById('playerName').value = saved;
+      }
+
+                            }); // конец DOMContentLoaded
