@@ -1,8 +1,12 @@
-// api/tournament.js - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ
-import { put } from '@vercel/blob';
+// api/tournament.js - ВЕРСИЯ С UPSTASH REDIS
+import { Redis } from '@upstash/redis';
 
-const roomKey = (code) => `tournaments/${code}.json`;
-const BLOB_BASE = 'https://awj11dvu2fwabtgr.public.blob.vercel-storage.com/tournaments';
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+const roomKey = (code) => `tournament:${code}`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -11,7 +15,7 @@ export default async function handler(req, res) {
 
   try {
     const { code, action, room, playerName, score } = req.body || {};
-
+    
     if (!code || !action) {
       return res.status(400).json({ error: 'Missing code or action' });
     }
@@ -24,36 +28,27 @@ export default async function handler(req, res) {
     // 🔹 ПОЛУЧИТЬ КОМНАТУ
     if (action === 'get_room') {
       console.log('📥 [API] get_room:', code);
-      const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
-      console.log('🌐 Запрос к Blob:', url);
-      const resp = await fetch(url, {
-  headers: {
-    'Cache-Control': 'no-cache, no-store, must-revalidate',
-    'Pragma': 'no-cache',
-    'Expires': '0'
-  }
-});
-      console.log('📊 Ответ от Blob:', resp.status);
       
-      if (!resp.ok) {
+      const roomJson = await redis.get(roomKey(code));
+      
+      if (!roomJson) {
         return res.status(404).json({ error: 'Room not found' });
       }
       
-      const data = await resp.json();
-
-// Добавить заголовки анти-кеширования
-res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-res.setHeader('Pragma', 'no-cache');
-res.setHeader('Expires', '0');
-
-return res.status(200).json(data);
+      const data = JSON.parse(roomJson);
+      
+      // Заголовки анти-кеширования
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      return res.status(200).json(data);
     }
 
     // 🔹 ПРОВЕРИТЬ СУЩЕСТВОВАНИЕ КОМНАТЫ
     if (action === 'check_exists') {
-      const url = `${BLOB_BASE}/${code}.json`;
-      const resp = await fetch(url, { method: 'HEAD' });
-      return res.json({ exists: resp.ok });
+      const exists = await redis.exists(roomKey(code));
+      return res.json({ exists: exists === 1 });
     }
 
     // 🔹 СОХРАНИТЬ КОМНАТУ
@@ -85,14 +80,8 @@ return res.status(200).json(data);
         });
       }
 
-      await put(roomKey(code), JSON.stringify(room, null, 2), {
-        contentType: 'application/json',
-        access: 'public',
-        addRandomSuffix: false,
-        cacheControlMaxAge: 0,
-        allowOverwrite: true,
-      });
-
+      await redis.set(roomKey(code), JSON.stringify(room));
+      
       return res.json({ ok: true, room });
     }
 
@@ -110,14 +99,13 @@ return res.status(200).json(data);
       }
 
       // Получить текущее состояние комнаты
-      const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
-      const resp = await fetch(url);
+      const roomJson = await redis.get(roomKey(code));
       
-      if (!resp.ok) {
+      if (!roomJson) {
         return res.status(404).json({ error: 'Room not found' });
       }
       
-      const room = await resp.json();
+      const room = JSON.parse(roomJson);
 
       // Проверка статуса турнира
       if (room.status !== 'waiting') {
@@ -137,150 +125,129 @@ return res.status(200).json(data);
       room.played[cleanName] = false;
 
       // Сохранить
-      await put(roomKey(code), JSON.stringify(room, null, 2), {
-        contentType: 'application/json',
-        access: 'public',
-        addRandomSuffix: false,
-        cacheControlMaxAge: 0,
-        allowOverwrite: true,
-      });
+      await redis.set(roomKey(code), JSON.stringify(room));
 
       return res.json({ ok: true, room });
     }
 
     // 🔹 НАЧАТЬ ТУРНИР (только хост)
-if (action === 'start_tournament') {
-  console.log('🏁 [API] start_tournament:', { code, playerName });
-  
-  if (!playerName) {
-    return res.status(400).json({ error: 'Missing playerName' });
-  }
-  
-  // Получить комнату
-  const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
-  const resp = await fetch(url);
-  
-  if (!resp.ok) {
-    return res.status(404).json({ error: 'Room not found' });
-  }
-  
-  const room = await resp.json();
-  
-  // Проверка что это хост
-  if (room.host !== playerName) {
-    return res.status(403).json({ error: 'Only host can start tournament' });
-  }
-  
-  // Проверка статуса
-  if (room.status !== 'waiting') {
-    return res.status(400).json({ error: 'Tournament already started' });
-  }
-  
-  // Проверка минимального количества игроков
-  if (room.players.length < 1) {
-    return res.status(400).json({ error: 'Need at least 1 player' });
-  }
+    if (action === 'start_tournament') {
+      console.log('🏁 [API] start_tournament:', { code, playerName });
+      
+      if (!playerName) {
+        return res.status(400).json({ error: 'Missing playerName' });
+      }
 
-  room.status = 'started';  // ✅ Теперь здесь правильно
-  room.startedAt = new Date().toISOString();
-  
-  console.log('✅ [API] Статус изменён на started:', room);
+      // Получить комнату
+      const roomJson = await redis.get(roomKey(code));
+      
+      if (!roomJson) {
+        return res.status(404).json({ error: 'Room not found' });
+      }
+      
+      const room = JSON.parse(roomJson);
 
-  await put(roomKey(code), JSON.stringify(room, null, 2), {
-    contentType: 'application/json',
-    access: 'public',
-    addRandomSuffix: false,
-    cacheControlMaxAge: 0,
-    allowOverwrite: true,
-  });
+      // Проверка что это хост
+      if (room.host !== playerName) {
+        return res.status(403).json({ error: 'Only host can start tournament' });
+      }
 
-  return res.json({ ok: true, room });
-}
+      // Проверка статуса
+      if (room.status !== 'waiting') {
+        return res.status(400).json({ error: 'Tournament already started' });
+      }
 
-// 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
-if (action === 'submit_score') {
-  console.log('=== API: submit_score ===');
-  console.log('📥 Получены данные:', { code, playerName, score });
-  
-  if (!playerName) {
-    return res.status(400).json({ error: 'Missing playerName' });
-  }
+      // Проверка минимального количества игроков
+      if (room.players.length < 1) {
+        return res.status(400).json({ error: 'Need at least 1 player' });
+      }
 
-  if (typeof score !== 'number' || score < 0) {
-    console.log('❌ Невалидный score:', score, typeof score);
-    return res.status(400).json({ error: 'Invalid score' });
-  }
+      room.status = 'started';
+      room.startedAt = new Date().toISOString();
+      
+      console.log('✅ [API] Статус изменён на started:', room);
 
-  // Получить комнату
-  const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
-  console.log('🌐 Загружаем комнату из:', url);
-  
-  const resp = await fetch(url);
-  
-  if (!resp.ok) {
-    console.log('❌ Комната не найдена, статус:', resp.status);
-    return res.status(404).json({ error: 'Room not found' });
-  }
-  
-  const room = await resp.json();
-  console.log('📊 Текущее состояние комнаты:', room);
+      await redis.set(roomKey(code), JSON.stringify(room));
 
-  // Проверка статуса
-  if (room.status !== 'started') {
-    console.log('❌ Турнир не в статусе started:', room.status);
-    return res.status(400).json({ error: 'Tournament not started' });
-  }
+      return res.json({ ok: true, room });
+    }
 
-  // Проверка что игрок в турнире
-  if (!room.players.includes(playerName)) {
-    console.log('❌ Игрок не в списке:', playerName, 'Список:', room.players);
-    return res.status(403).json({ error: 'Player not in tournament' });
-  }
+    // 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
+    if (action === 'submit_score') {
+      console.log('=== API: submit_score ===');
+      console.log('📥 Получены данные:', { code, playerName, score });
+      
+      if (!playerName) {
+        return res.status(400).json({ error: 'Missing playerName' });
+      }
 
-  // ✅ Проверка: Уже сыграл?
-  room.played = room.played || {};
-  if (room.played[playerName] === true) {
-    console.log('⚠️ Игрок уже сыграл:', playerName);
-    return res.status(400).json({ error: 'You already played' });
-  }
+      if (typeof score !== 'number' || score < 0) {
+        console.log('❌ Невалидный score:', score, typeof score);
+        return res.status(400).json({ error: 'Invalid score' });
+      }
 
-  // Обновить счёт
-  room.scores = room.scores || {};
-  room.scores[playerName] = score;
-  room.played[playerName] = true;
+      // Получить комнату
+      const roomJson = await redis.get(roomKey(code));
+      
+      if (!roomJson) {
+        console.log('❌ Комната не найдена');
+        return res.status(404).json({ error: 'Room not found' });
+      }
+      
+      const room = JSON.parse(roomJson);
+      console.log('📊 Текущее состояние комнаты:', room);
 
-  console.log('💾 Обновлённые очки:', room.scores);
-  console.log('💾 Обновлённый played:', room.played);
+      // Проверка статуса
+      if (room.status !== 'started') {
+        console.log('❌ Турнир не в статусе started:', room.status);
+        return res.status(400).json({ error: 'Tournament not started' });
+      }
 
-  // Проверить завершение турнира (все сыграли?)
-  const allPlayed = room.players.every(name => room.played[name] === true);
-  console.log('🎮 Все сыграли?', allPlayed);
-  console.log('👥 Игроки:', room.players);
-  console.log('✅ Played статус:', room.played);
+      // Проверка что игрок в турнире
+      if (!room.players.includes(playerName)) {
+        console.log('❌ Игрок не в списке:', playerName, 'Список:', room.players);
+        return res.status(403).json({ error: 'Player not in tournament' });
+      }
 
-if (allPlayed) {
-  room.status = 'finished';
-  room.finishedAt = new Date().toISOString();
-  console.log('🏁 Все сыграли! Автоматически завершаем турнир');
-}
-  
-  await put(roomKey(code), JSON.stringify(room, null, 2), {
-    contentType: 'application/json',
-    access: 'public',
-    addRandomSuffix: false,
-    cacheControlMaxAge: 0,
-    allowOverwrite: true,
-  });
+      // ✅ Проверка: Уже сыграл?
+      room.played = room.played || {};
+      if (room.played[playerName] === true) {
+        console.log('⚠️ Игрок уже сыграл:', playerName);
+        return res.status(400).json({ error: 'You already played' });
+      }
 
-  console.log('✅ Данные сохранены в Blob');
-  console.log('=== API: submit_score завершён ===');
+      // Обновить счёт
+      room.scores = room.scores || {};
+      room.scores[playerName] = score;
+      room.played[playerName] = true;
+      
+      console.log('💾 Обновлённые очки:', room.scores);
+      console.log('💾 Обновлённый played:', room.played);
 
-  return res.json({ 
-    ok: true, 
-    room,
-    tournamentFinished: allPlayed
-  });
-}
+      // Проверить завершение турнира (все сыграли?)
+      const allPlayed = room.players.every(name => room.played[name] === true);
+      console.log('🎮 Все сыграли?', allPlayed);
+      console.log('👥 Игроки:', room.players);
+      console.log('✅ Played статус:', room.played);
+
+      // ✅ Автоматически завершаем турнир если все сыграли
+      if (allPlayed) {
+        room.status = 'finished';
+        room.finishedAt = new Date().toISOString();
+        console.log('🏁 Все сыграли! Автоматически завершаем турнир');
+      }
+
+      await redis.set(roomKey(code), JSON.stringify(room));
+      
+      console.log('✅ Данные сохранены в Redis');
+      console.log('=== API: submit_score завершён ===');
+
+      return res.json({ 
+        ok: true, 
+        room,
+        tournamentFinished: allPlayed
+      });
+    }
 
     return res.status(400).json({ error: 'Unknown action' });
 
