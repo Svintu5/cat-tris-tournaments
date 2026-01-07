@@ -23,8 +23,11 @@ export default async function handler(req, res) {
 
     // 🔹 ПОЛУЧИТЬ КОМНАТУ
     if (action === 'get_room') {
+      console.log('📥 [API] get_room:', code);
       const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
+      console.log('🌐 Запрос к Blob:', url);
       const resp = await fetch(url);
+      console.log('📊 Ответ от Blob:', resp.status);
       
       if (!resp.ok) {
         return res.status(404).json({ error: 'Room not found' });
@@ -135,9 +138,12 @@ export default async function handler(req, res) {
 
     // 🔹 НАЧАТЬ ТУРНИР (только хост)
     if (action === 'start_tournament') {
+      console.log('🏁 [API] start_tournament:', { code, playerName });
+      
       if (!playerName) {
         return res.status(400).json({ error: 'Missing playerName' });
       }
+      room.status = 'started';
 
       // Получить комнату
       const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
@@ -166,6 +172,7 @@ export default async function handler(req, res) {
 
       room.status = 'started';
       room.startedAt = new Date().toISOString();
+      console.log('✅ [API] Статус изменён на started:', room);
 
       await put(roomKey(code), JSON.stringify(room, null, 2), {
         contentType: 'application/json',
