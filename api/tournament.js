@@ -137,53 +137,53 @@ export default async function handler(req, res) {
     }
 
     // 🔹 НАЧАТЬ ТУРНИР (только хост)
-    if (action === 'start_tournament') {
-      console.log('🏁 [API] start_tournament:', { code, playerName });
-      
-      if (!playerName) {
-        return res.status(400).json({ error: 'Missing playerName' });
-      }
-      room.status = 'started';
+if (action === 'start_tournament') {
+  console.log('🏁 [API] start_tournament:', { code, playerName });
+  
+  if (!playerName) {
+    return res.status(400).json({ error: 'Missing playerName' });
+  }
+  
+  // Получить комнату
+  const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
+  const resp = await fetch(url);
+  
+  if (!resp.ok) {
+    return res.status(404).json({ error: 'Room not found' });
+  }
+  
+  const room = await resp.json();
+  
+  // Проверка что это хост
+  if (room.host !== playerName) {
+    return res.status(403).json({ error: 'Only host can start tournament' });
+  }
+  
+  // Проверка статуса
+  if (room.status !== 'waiting') {
+    return res.status(400).json({ error: 'Tournament already started' });
+  }
+  
+  // Проверка минимального количества игроков
+  if (room.players.length < 1) {
+    return res.status(400).json({ error: 'Need at least 1 player' });
+  }
 
-      // Получить комнату
-      const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
-      const resp = await fetch(url);
-      
-      if (!resp.ok) {
-        return res.status(404).json({ error: 'Room not found' });
-      }
-      
-      const room = await resp.json();
+  room.status = 'started';  // ✅ Теперь здесь правильно
+  room.startedAt = new Date().toISOString();
+  
+  console.log('✅ [API] Статус изменён на started:', room);
 
-      // Проверка что это хост
-      if (room.host !== playerName) {
-        return res.status(403).json({ error: 'Only host can start tournament' });
-      }
+  await put(roomKey(code), JSON.stringify(room, null, 2), {
+    contentType: 'application/json',
+    access: 'public',
+    addRandomSuffix: false,
+    cacheControlMaxAge: 0,
+    allowOverwrite: true,
+  });
 
-      // Проверка статуса
-      if (room.status !== 'waiting') {
-        return res.status(400).json({ error: 'Tournament already started' });
-      }
-
-      // Проверка минимального количества игроков
-      if (room.players.length < 1) {
-        return res.status(400).json({ error: 'Need at least 1 player' });
-      }
-
-      room.status = 'started';
-      room.startedAt = new Date().toISOString();
-      console.log('✅ [API] Статус изменён на started:', room);
-
-      await put(roomKey(code), JSON.stringify(room, null, 2), {
-        contentType: 'application/json',
-        access: 'public',
-        addRandomSuffix: false,
-        cacheControlMaxAge: 0,
-        allowOverwrite: true,
-      });
-
-      return res.json({ ok: true, room });
-    }
+  return res.json({ ok: true, room });
+}
 
 // 🔹 ОТПРАВИТЬ РЕЗУЛЬТАТ
 if (action === 'submit_score') {
