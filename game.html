@@ -423,11 +423,25 @@ const API_BASE = `${location.origin}/api/tournament`;
 
 // Вспомогательная функция для API
 async function apiCall(action, data = {}) {
+  // ✅ Добавляем timestamp для отключения кеша
+  const payload = { 
+    action, 
+    ...data,
+    _timestamp: Date.now() // Добавляем случайный параметр
+  };
+  
+  console.log('📤 [API] Запрос:', action, data);
+  
   const res = await fetch(API_BASE, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, ...data })
+    headers: { 
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache' // ← ДОБАВЬ ЭТУ СТРОКУ
+    },
+    body: JSON.stringify(payload) // ← ИЗМЕНЕНО: используем payload
   });
+  
+  console.log('📥 [API] Ответ:', res.status, res.statusText);
   
   if (!res.ok) {
     const error = await res.json();
@@ -435,6 +449,8 @@ async function apiCall(action, data = {}) {
   }
   
   return await res.json();
+  console.log('✅ [API] Результат:', result); // ← ДОБАВЬ
+  return result;
 }
 
 let tournamentStatus = 'waiting';
@@ -492,7 +508,8 @@ if (playerRole === 'host') {
         
         const endBtn = document.getElementById('endTournamentBtn');
         if (endBtn) endBtn.style.display = 'block';
-        
+
+        console.log('🏁 Турнир запущен, обновляем статус...');
         await updateTournamentState();
       } catch (err) {
         console.error(err);
@@ -576,10 +593,19 @@ if (playerRole === 'host') {
 
 // ОБНОВЛЕНИЕ СОСТОЯНИЯ ТУРНИРА
 async function updateTournamentState() {
+  console.log('🔄 [POLL] Запрос статуса комнаты:', roomCode, new Date().toISOString());
+  
   try {
     const data = await apiCall('get_room', { code: roomCode });
+    console.log('✅ [POLL] Получены данные:', {
+      status: data.status,
+      players: data.players,
+      scores: data.scores,
+      played: data.played
+    });
     currentRoom = data;
     tournamentStatus = data.status;
+    console.log('📊 [POLL] Локальный статус обновлён:', tournamentStatus);
 
     // Обновляем статус
     const statusEl = document.getElementById('status');
@@ -640,7 +666,9 @@ if (data.status === 'finished') {
 }
 
 // Поллинг каждые 2 секунды (было 8!)
+console.log('⏰ Запускаем polling каждые 2 секунды...');
 setInterval(updateTournamentState, 2000);
+console.log('🔄 Первая загрузка состояния...');
 updateTournamentState(); // Первая загрузка
   
 // ОТПРАВКА ОЧКОВ
@@ -986,11 +1014,18 @@ if (dropCounter > currentInterval) playerDrop();
 
 function handleAction(action) {
   if (action === 'start') {
+    console.log('🎮 Попытка начать игру, статус турнира:', tournamentStatus);
+    
     // Проверяем статус турнира
     if (tournamentStatus === 'waiting') {
+      console.log('⏳ Турнир в статусе waiting, блокируем старт');
       startOverlay.textContent = 'Ждём старта от хоста';
       startOverlay.style.display = 'block';
       return;
+    }
+    
+    if (tournamentStatus !== 'started') {
+      console.log('⚠️ Турнир не в статусе started:', tournamentStatus);
     }
 
     if (tournamentStatus === 'finished') {
