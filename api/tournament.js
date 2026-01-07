@@ -26,7 +26,13 @@ export default async function handler(req, res) {
       console.log('📥 [API] get_room:', code);
       const url = `${BLOB_BASE}/${code}.json?download=1&t=${Date.now()}`;
       console.log('🌐 Запрос к Blob:', url);
-      const resp = await fetch(url);
+      const resp = await fetch(url, {
+  headers: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }
+});
       console.log('📊 Ответ от Blob:', resp.status);
       
       if (!resp.ok) {
@@ -34,7 +40,13 @@ export default async function handler(req, res) {
       }
       
       const data = await resp.json();
-      return res.status(200).json(data);
+
+// Добавить заголовки анти-кеширования
+res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+res.setHeader('Pragma', 'no-cache');
+res.setHeader('Expires', '0');
+
+return res.status(200).json(data);
     }
 
     // 🔹 ПРОВЕРИТЬ СУЩЕСТВОВАНИЕ КОМНАТЫ
@@ -246,7 +258,7 @@ if (action === 'submit_score') {
   console.log('👥 Игроки:', room.players);
   console.log('✅ Played статус:', room.played);
 
-  if (allPlayed) {
+if (allPlayed) {
   room.status = 'finished';
   room.finishedAt = new Date().toISOString();
   console.log('🏁 Все сыграли! Автоматически завершаем турнир');
