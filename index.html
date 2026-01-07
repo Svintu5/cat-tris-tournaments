@@ -1,42 +1,244 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>😻 Cat‑tris | Tournament Lobby</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.cdnfonts.com/css/switzer" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+      background:
+        radial-gradient(circle at 20% 20%, #E37DF7 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, #110FFF 0%, transparent 50%),
+        #000;
+      font-family: 'Switzer', sans-serif;
+      color: #fff;
+    }
+
+    .lobby-container {
+      background: rgba(15, 0, 35, 0.95);
+      border: 2px solid #9B6AF6;
+      border-radius: 28px;
+      padding: 48px 60px;
+      box-shadow: 
+        0 0 0 1px #E37DF7,
+        0 0 60px rgba(155, 106, 246, 0.4);
+      text-align: center;
+      backdrop-filter: blur(20px);
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .logo {
+      font-size: 36px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      margin-bottom: 12px;
+      background: linear-gradient(45deg, #E37DF7, #9B6AF6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(227, 125, 247, 0.5);
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: #E6E6FF;
+      margin-bottom: 36px;
+      letter-spacing: 0.1em;
+      opacity: 0.9;
+    }
+
+    .input-group {
+      margin-bottom: 24px;
+    }
+
+    input {
+      width: 100%;
+      padding: 18px 24px;
+      border-radius: 16px;
+      border: 2px solid transparent;
+      font-size: 18px;
+      font-weight: 600;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.92);
+      color: #222;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #9B6AF6;
+      box-shadow: 0 0 20px rgba(155, 106, 246, 0.3);
+      transform: scale(1.02);
+    }
+
+    input::placeholder {
+      color: #888;
+      font-weight: 500;
+    }
+
+    .room-input {
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 18px 8px;
+      border-radius: 16px;
+      border: none;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .create-btn {
+      background: linear-gradient(45deg, #00FF88, #00D06A);
+      color: #000;
+      box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+    }
+
+    .create-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(0, 255, 136, 0.6);
+    }
+
+    .join-btn {
+      background: linear-gradient(45deg, #FF6B6B, #FF8B8B);
+      color: #fff;
+      box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    }
+
+    .join-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+    }
+
+    .footer {
+      margin-top: 40px;
+      font-size: 14px;
+      color: #9B6AF6;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .lobby-container {
+        padding: 36px 40px;
+        margin: 0 20px;
+      }
+      .logo { font-size: 28px; }
+      button { padding: 16px 4px; font-size: 15px; }
+    }
+
+    .promo {
+      width: 380px;
+      margin-top: 8px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 6px;
+      font-size: 15px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #E6E6FF;
+      opacity: 0.9;
+    }
+
+    .promo-logo {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px #110FFF);
+    }
+
+    .promo-text {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="lobby-container">
+    <div class="logo">😻 Cat-tris</div>
+    <div class="subtitle">Tournament Edition</div>
+
+    <div class="input-group">
+      <input id="playerName" placeholder="Enter your nickname" maxlength="12">
+    </div>
+
+    <div class="input-group">
+      <input id="roomCode" class="room-input" placeholder="ABCD" maxlength="4">
+    </div>
+
+    <div class="buttons">
+      <button class="create-btn" id="createBtn">🚀 CREATE</button>
+      <button class="join-btn" id="joinBtn">⚡ JOIN</button>
+    </div>
+  </div>
+
+  <div class="promo">
+    <span class="promo-text">Made for</span>
+    <img src="img/genlayer-logo.svg" alt="GenLayer" class="promo-logo">
+  </div>
+
+  <script>
 const API_BASE = `${location.origin}/api/tournament`;
 
 // Вспомогательные функции
 async function apiCall(action, data = {}) {
-  console.log('🌐 API запрос:', action, data);
-  
   const res = await fetch(API_BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, ...data })
   });
   
-  console.log('📡 Статус:', res.status, res.statusText);
-  
   if (!res.ok) {
     const error = await res.json();
-    console.error('❌ Ошибка API:', error);
     throw new Error(error.error || 'Ошибка API');
   }
   
-  const result = await res.json();
-  console.log('✅ Результат API:', result);
-  return result;
+  return await res.json();
 }
 
 function sanitizeName(name) {
   return name.trim().replace(/[<>'"]/g, '').slice(0, 12);
 }
 
-// Генерация кода комнаты (ПРОСТАЯ)
-function generateUniqueRoomCode() {
-  const code = Math.random().toString(36).slice(2, 6).toUpperCase();
-  console.log('🎲 Код:', code);
-  return code;
+// Генерация уникального кода комнаты
+async function generateUniqueRoomCode() {
+  for (let i = 0; i < 10; i++) {
+    const code = Math.random().toString(36).slice(2, 6).toUpperCase();
+    try {
+      const { exists } = await apiCall('check_exists', { code });
+      if (!exists) return code;
+    } catch (e) {
+      console.error('Ошибка проверки кода:', e);
+    }
+  }
+  throw new Error('Не удалось сгенерировать уникальный код');
 }
-
-  // Ждём загрузки DOM перед установкой обработчиков
-  document.addEventListener('DOMContentLoaded', () => {
 
 // СОЗДАТЬ КОМНАТУ
 document.getElementById('createBtn').onclick = async () => {
@@ -50,8 +252,7 @@ document.getElementById('createBtn').onclick = async () => {
   createBtn.textContent = '🔄 СОЗДАЁМ...';
 
   try {
-    const roomCode = generateUniqueRoomCode();
-    console.log('✅ Генерация завершена:', roomCode);
+    const roomCode = await generateUniqueRoomCode();
     
     const room = {
       code: roomCode,
@@ -64,16 +265,16 @@ document.getElementById('createBtn').onclick = async () => {
       createdAt: new Date().toISOString()
     };
 
-    console.log('💾 Отправляем:', room);
     await apiCall('save_room', { code: roomCode, room });
     
+    // Сохраняем имя для удобства
     localStorage.setItem('cattris_player_name', hostName);
     
-    alert(`✅ Комната ${roomCode} создана!`);
+    alert(`✅ Комната ${roomCode} создана! Передай код друзьям!`);
     window.location.href = 
       `game.html?room=${roomCode}&name=${encodeURIComponent(hostName)}&role=host`;
   } catch (err) {
-    console.error('❌ Ошибка:', err);
+    console.error(err);
     alert(`❌ Ошибка: ${err.message}`);
   } finally {
     createBtn.disabled = false;
@@ -92,7 +293,7 @@ document.getElementById('joinBtn').onclick = async () => {
 
   if (!playerName) return alert('👤 Введите ник!');
   if (!roomCode || roomCode.length !== 4) {
-    return alert('📝 Введите 4-значный код!');
+    return alert('📝 Введите 4-значный код комнаты!');
   }
 
   joinBtn.disabled = true;
@@ -105,16 +306,18 @@ document.getElementById('joinBtn').onclick = async () => {
     });
 
     localStorage.setItem('cattris_player_name', playerName);
+
     alert(`✅ Вы вошли в ${room.name}!`);
     window.location.href = 
       `game.html?room=${roomCode}&name=${encodeURIComponent(playerName)}&role=player`;
   } catch (err) {
     console.error(err);
     
+    // Понятные сообщения об ошибках
     if (err.message.includes('already started')) {
       alert('🏁 Турнир уже начался!');
     } else if (err.message.includes('already taken')) {
-      alert('👤 Имя уже занято!');
+      alert('👤 Имя уже занято! Выбери другое.');
     } else if (err.message.includes('not found')) {
       alert('❌ Комната не найдена!');
     } else {
@@ -126,7 +329,7 @@ document.getElementById('joinBtn').onclick = async () => {
   }
 };
 
-// Автоформатирование
+// Автоформатирование кода комнаты
 document.getElementById('roomCode').oninput = (e) => {
   e.target.value = e.target.value
     .toUpperCase()
@@ -134,7 +337,7 @@ document.getElementById('roomCode').oninput = (e) => {
     .slice(0, 4);
 };
 
-// Enter для создания/входа
+// Горячие клавиши (Enter для создания/входа)
 document.getElementById('playerName').onkeypress = 
 document.getElementById('roomCode').onkeypress = (e) => {
   if (e.key === 'Enter') {
@@ -147,10 +350,14 @@ document.getElementById('roomCode').onkeypress = (e) => {
   }
 };
 
-// Восстановить имя
-const saved = localStorage.getItem('cattris_player_name');
-    if (saved) {
-        document.getElementById('playerName').value = saved;
-      }
+// Восстановить сохранённое имя
+window.onload = () => {
+  const saved = localStorage.getItem('cattris_player_name');
+  if (saved) {
+    document.getElementById('playerName').value = saved;
+  }
+};
+</script>
 
-                            }); // конец DOMContentLoaded
+</body>
+</html>
