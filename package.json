@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@vercel/blob": "latest"
+     "@upstash/redis": "^1.28.0"
   },
   "description": "",
   "main": "index.js",
