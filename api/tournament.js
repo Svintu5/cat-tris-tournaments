@@ -246,6 +246,12 @@ if (action === 'submit_score') {
   console.log('👥 Игроки:', room.players);
   console.log('✅ Played статус:', room.played);
 
+  if (allPlayed) {
+  room.status = 'finished';
+  room.finishedAt = new Date().toISOString();
+  console.log('🏁 Все сыграли! Автоматически завершаем турнир');
+}
+  
   await put(roomKey(code), JSON.stringify(room, null, 2), {
     contentType: 'application/json',
     access: 'public',
