@@ -460,7 +460,7 @@ let currentRoom = null;
 if (!roomCode) {
   document.querySelector('.tournament-info').style.display = 'block';
   document.querySelector('.tournament-info').innerHTML = 
-    '❌ <a href="index.html" style="color: #FF6B6B;">Вернуться в лобби →</a>';
+   '❌ <a href="index.html" style="color: #FF6B6B;">Go to lobby →</a>'
   throw new Error('Нет кода комнаты');
 }
   
@@ -482,7 +482,7 @@ tourUI.innerHTML = `
   ${roleInfo}
   <h3 style="color:#E37DF7;margin:0 0 12px;font-size:18px">🏆 ${roomCode}</h3>
   <div style="margin-bottom:12px;font-size:14px">👤 ${playerName}</div>
-  <div id="status" style="margin-bottom:16px;font-size:14px">Загрузка...</div>
+  <div id="status" style="margin-bottom:16px;font-size:14px">Loading...</div>
   <div id="leaderboard" style="max-height:200px;overflow:auto;font-size:13px"></div>
 `;
 document.body.appendChild(tourUI);
@@ -493,10 +493,10 @@ if (playerRole === 'host') {
   if (startBtn) {
     startBtn.style.display = 'block';
     startBtn.onclick = async () => {
-      if (!confirm('🚀 Начать турнир?')) return;
+      if (!confirm('🚀 Start the tournament?')) return;
 
       startBtn.disabled = true;
-      startBtn.textContent = '🔄 ЗАПУСКАЕМ...';
+      startBtn.textContent = '🔄 STARTING...';
 
       try {
         await apiCall('start_tournament', { 
@@ -546,7 +546,7 @@ if (playerRole === 'host') {
       font-family: 'Switzer', sans-serif;
       display: none;
     `;
-    endBtn.textContent = '🏁 Завершить турнир';
+    endBtn.textContent = '🏁 End Tournament';
     
     endBtn.onmouseover = () => {
       endBtn.style.transform = 'translateY(-3px)';
@@ -559,10 +559,10 @@ if (playerRole === 'host') {
     };
     
     endBtn.onclick = async () => {
-      if (!confirm('🏁 Завершить турнир и показать результаты?')) return;
+      if (!confirm('🏁 End tournament and show results?')) return;
       
       endBtn.disabled = true;
-      endBtn.textContent = '🔄 ЗАВЕРШАЕМ...';
+      endBtn.textContent = '🔄 ENDING...';
       
       try {
         console.log('🏁 Завершаем турнир...');
@@ -583,7 +583,7 @@ if (playerRole === 'host') {
         console.error('❌ Ошибка:', err);
         alert(`❌ ${err.message}`);
         endBtn.disabled = false;
-        endBtn.textContent = '🏁 Завершить турнир';
+        endBtn.textContent = '🏁 End Tournament';
       }
     };
     
@@ -609,22 +609,21 @@ async function updateTournamentState() {
 
     // Обновляем статус
     const statusEl = document.getElementById('status');
-    if (data.status === 'waiting') {
-      const count = data.players.length;
-      statusEl.textContent = `⏳ Ждём хоста... (${count} игроков)`;
-    } else if (data.status === 'started') {
-      // ✅ Проверяем, сыграл ли уже этот игрок
-      const alreadyPlayed = data.played && data.played[playerName] === true;
-      if (alreadyPlayed) {
-        statusEl.textContent = '✅ Вы сыграли! Ждём других игроков...';
-        startOverlay.textContent = 'Вы уже сыграли! Ожидайте завершения турнира.';
-        startOverlay.style.display = 'block';
-      } else {
-        statusEl.textContent = '🎮 Турнир начался! Нажми Start';
-      }
-    } else if (data.status === 'finished') {
-      statusEl.textContent = '🏁 Турнир завершён!';
-    }
+if (data.status === 'waiting') {
+  const count = data.players.length;
+  statusEl.textContent = `⏳ Waiting for host... (${count} players)`;
+} else if (data.status === 'started') {
+  const alreadyPlayed = data.played && data.played[playerName] === true;
+  if (alreadyPlayed) {
+    statusEl.textContent = '✅ You played! Waiting for others...';
+    startOverlay.textContent = 'You already played! Wait for tournament end.';
+    startOverlay.style.display = 'block';
+  } else {
+    statusEl.textContent = '🎮 Tournament started! Press Start';
+  }
+} else if (data.status === 'finished') {
+  statusEl.textContent = '🏁 Tournament finished!';
+}
 
     // Обновляем таблицу лидеров
     const leaderboardArr = Object.entries(data.scores || {})
@@ -651,7 +650,7 @@ if (data.status === 'finished') {
   console.log('🎭 Роль:', playerRole);
   console.log('📊 Финальные данные:', data);
   
-  document.getElementById('status').textContent = '🏁 Турнир завершён! Редирект...';
+  document.getElementById('status').textContent = '🏁 Tournament finished! Redirecting...';
   
   setTimeout(() => {
     console.log('🔄 Выполняем редирект...');
@@ -699,7 +698,7 @@ window.sendScore = async (finalScore) => {
     currentRoom = room;
     tournamentStatus = room.status;
 
-    document.getElementById('status').textContent = `✅ Результат сохранён: ${finalScore}`;
+    document.getElementById('status').textContent = `✅ Score saved: ${finalScore}`;
 
     // Сразу обновляем таблицу
     await updateTournamentState();
@@ -721,9 +720,9 @@ window.sendScore = async (finalScore) => {
     
     if (err.message.includes('already played')) {
       await updateTournamentState();
-      alert('✅ Вы уже отправили результат!');
+      alert('✅ You already submitted your score!');
     } else {
-      alert(`❌ Не удалось сохранить результат: ${err.message}`);
+      alert(`❌ Failed to save score: ${err.message}`);
     }
   }
   
@@ -922,7 +921,7 @@ function playerReset() {
     gameOver = true;
     
     // ✅ Показываем overlay
-    startOverlay.textContent = 'Отправка результата...';
+    startOverlay.textContent = 'Submitting score...';
     startOverlay.style.display = 'block';
     
     // ✅ Сбрасываем поле и счёт
@@ -935,13 +934,13 @@ function playerReset() {
     if (typeof window.sendScore === 'function') {
       window.sendScore(finalScore)
         .then(() => {
-          startOverlay.textContent = `Результат сохранён: ${finalScore} очков. Ждите завершения турнира.`;
+        startOverlay.textContent = `Score saved: ${finalScore} points. Wait for tournament end.`;
           
           // ✅ Через 2 секунды проверяем можно ли играть снова
           setTimeout(async () => {
             await updateTournamentState();
             if (currentRoom && currentRoom.played && currentRoom.played[playerName]) {
-              startOverlay.textContent = 'Вы сыграли! Ждём других игроков...';
+              startOverlay.textContent = 'You played! Waiting for others...';
               gameOver = true; // Держим блокировку
             }
           }, 2000);
@@ -950,9 +949,9 @@ function playerReset() {
           console.error('Ошибка отправки очков:', err);
           // Если ошибка "already played" - не показываем как критичную
           if (err.message.includes('already played')) {
-            startOverlay.textContent = 'Вы уже сыграли!';
+          startOverlay.textContent = 'You already played!';
           } else {
-            startOverlay.textContent = 'Ошибка отправки результата';
+          startOverlay.textContent = 'Failed to submit score';
           }
         });
     } else {
@@ -1019,7 +1018,7 @@ function handleAction(action) {
     // Проверяем статус турнира
     if (tournamentStatus === 'waiting') {
       console.log('⏳ Турнир в статусе waiting, блокируем старт');
-      startOverlay.textContent = 'Ждём старта от хоста';
+      startOverlay.textContent = 'Waiting for host to start';
       startOverlay.style.display = 'block';
       return;
     }
@@ -1029,7 +1028,7 @@ function handleAction(action) {
     }
 
     if (tournamentStatus === 'finished') {
-      alert('🏁 Турнир уже завершён!');
+      alert('🏁 Tournament already finished!');
       return;
     }
 
@@ -1043,8 +1042,8 @@ function handleAction(action) {
       });
       
       if (alreadyPlayed) {
-        alert('✅ Вы уже сыграли! Ожидайте завершения турнира.');
-        startOverlay.textContent = 'Вы уже сыграли! Ждём других игроков...';
+        alert('✅ You already played! Wait for tournament end.');
+        startOverlay.textContent = 'You already played! Waiting for others...';
         startOverlay.style.display = 'block';
         return;
       }
@@ -1053,7 +1052,7 @@ function handleAction(action) {
     // ✅ Дополнительная проверка на случай если game over был недавно
     if (gameOver) {
       console.log('⚠️ Попытка начать игру сразу после game over');
-      startOverlay.textContent = 'Ожидайте обновления статуса...';
+      startOverlay.textContent = 'Updating status...';
       startOverlay.style.display = 'block';
       
       // Форсируем обновление состояния
@@ -1138,7 +1137,7 @@ update();
 window.addEventListener('beforeunload', (e) => {
   if (gameStarted && !gameOver) {
     e.preventDefault();
-    e.returnValue = 'Игра идёт! Точно выйти?';
+    e.returnValue = 'Game in progress! Leave anyway?';
   }
 });
 
