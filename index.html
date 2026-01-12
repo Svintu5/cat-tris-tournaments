@@ -246,7 +246,7 @@ document.getElementById('createBtn').onclick = async () => {
   const createBtn = document.getElementById('createBtn');
   const hostName = sanitizeName(nameInput.value || 'Host');
   
-  if (!hostName) return alert('👤 Введите ник!');
+  if (!hostName) return alert('👤 Enter your nickname!');
 
   createBtn.disabled = true;
   createBtn.textContent = '🔄 СОЗДАЁМ...';
@@ -257,7 +257,7 @@ document.getElementById('createBtn').onclick = async () => {
     const room = {
       code: roomCode,
       host: hostName,
-      name: `Битва ${hostName} в Cat-tris`,
+      name: `${hostName}'s Cat-tris Battle`,
       status: 'waiting',
       players: [hostName],
       scores: { [hostName]: 0 },
@@ -270,12 +270,12 @@ document.getElementById('createBtn').onclick = async () => {
     // Сохраняем имя для удобства
     localStorage.setItem('cattris_player_name', hostName);
     
-    alert(`✅ Комната ${roomCode} создана! Передай код друзьям!`);
+    alert(`✅ Room ${roomCode} created! Share the code!`);
     window.location.href = 
       `game.html?room=${roomCode}&name=${encodeURIComponent(hostName)}&role=host`;
   } catch (err) {
     console.error(err);
-    alert(`❌ Ошибка: ${err.message}`);
+    alert(`❌ Error: ${err.message}`);
   } finally {
     createBtn.disabled = false;
     createBtn.textContent = '🚀 CREATE';
@@ -291,9 +291,9 @@ document.getElementById('joinBtn').onclick = async () => {
   const playerName = sanitizeName(nameInput.value || 'Player');
   const roomCode = roomInput.value.trim().toUpperCase();
 
-  if (!playerName) return alert('👤 Введите ник!');
+  if (!playerName) return alert('👤 Enter your nickname!');
   if (!roomCode || roomCode.length !== 4) {
-    return alert('📝 Введите 4-значный код комнаты!');
+    return alert('📝 Enter 4-character room code!');
   }
 
   joinBtn.disabled = true;
@@ -307,7 +307,7 @@ document.getElementById('joinBtn').onclick = async () => {
 
     localStorage.setItem('cattris_player_name', playerName);
 
-    alert(`✅ Вы вошли в ${room.name}!`);
+    alert(`✅ Joined ${room.name}!`);
     window.location.href = 
       `game.html?room=${roomCode}&name=${encodeURIComponent(playerName)}&role=player`;
   } catch (err) {
@@ -315,13 +315,13 @@ document.getElementById('joinBtn').onclick = async () => {
     
     // Понятные сообщения об ошибках
     if (err.message.includes('already started')) {
-      alert('🏁 Турнир уже начался!');
+      alert('🏁 Tournament already started!');
     } else if (err.message.includes('already taken')) {
-      alert('👤 Имя уже занято! Выбери другое.');
+      alert('👤 Name already taken! Choose another.');
     } else if (err.message.includes('not found')) {
-      alert('❌ Комната не найдена!');
+      alert('❌ Room not found!');
     } else {
-      alert(`❌ Ошибка: ${err.message}`);
+      alert(`❌ Error: ${err.message}`);
     }
   } finally {
     joinBtn.disabled = false;
