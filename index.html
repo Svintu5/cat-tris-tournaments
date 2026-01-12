@@ -249,7 +249,7 @@ document.getElementById('createBtn').onclick = async () => {
   if (!hostName) return alert('👤 Enter your nickname!');
 
   createBtn.disabled = true;
-  createBtn.textContent = '🔄 СОЗДАЁМ...';
+  createBtn.textContent = '🔄 CREATING...';
 
   try {
     const roomCode = await generateUniqueRoomCode();
